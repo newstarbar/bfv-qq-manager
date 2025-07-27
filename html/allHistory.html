@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            /* 设置字体 */
+            background-color: #f7f7f7;
+            /* 设置背景颜色 */
+            margin: 0;
+            padding: 20px;
+        }
+
+        .center-text {
+            text-align: center;
+            margin: 20px 0;
+            color: #333;
+            /* 设置标题颜色 */
+        }
+
+        .calendar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            margin: 20px;
+            background-color: #fff;
+            /* 设置日历背景颜色 */
+            padding: 10px;
+            border-radius: 8px;
+            /* 设置圆角 */
+            box-shadow: 0 2px 5px rgba(113, 108, 108, 0.1);
+        }
+
+        .day {
+            width: 60px;
+            /* 可以根据需要调整宽度 */
+            height: 80px;
+            /* 增加高度以提供更多空间 */
+            border-radius: 40%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: 15px;
+            font-size: 20px;
+            color: white;
+        }
+
+        .date-circle-organ {
+            width: 50px;
+            height: 50px;
+            border-radius: 40%;
+            background-color: rgb(241, 167, 92);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            margin-bottom: 5px;
+            /* 增加底部间距 */
+        }
+
+        .date-circle-offline {
+            width: 50px;
+            height: 50px;
+            border-radius: 40%;
+            background-color: rgb(170, 170, 170);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            margin-bottom: 5px;
+            /* 增加底部间距 */
+        }
+
+        .player-count {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            /* 确保玩家数在中间 */
+            font-size: 20px;
+            /* 适当减小字体大小 */
+        }
+
+        .online {
+            color: green;
+            margin-right: 5px;
+            /* 在在线数和暖机数之间添加间距 */
+        }
+
+        .warming {
+            color: orange;
+            margin-right: 5px;
+            /* 在在线数和暖机数之间添加间距 */
+        }
+
+        .offline {
+            color: #9E9E9E;
+            /* 灰色 */
+            margin-right: 5px;
+            /* 增加底部间距 */
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 5px;
+            gap: 20px;
+            /* 设置图例项之间的间距 */
+        }
+
+        .legend-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .legend-circle-organ {
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            border-radius: 50%;
+            margin-bottom: 5px;
+            color: orange;
+            /* 设置图例文本颜色 */
+        }
+
+        .legend-circle-green {
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            border-radius: 50%;
+            margin-bottom: 5px;
+            color: green;
+            /* 设置图例文本颜色 */
+        }
+    </style>
+</head>
+
+<body>
+    <h1 class="center-text">[Zygo]-{{year}}年{{month}}月-上线情况</h1>
+    <div class="calendar">
+        {{history}}
+    </div>
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-circle-green"></div>
+            <span>当日上线人数</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-circle-organ"></div>
+            <span>当日暖服人数</span>
+        </div>
+    </div>
+</body>
+
+</html>

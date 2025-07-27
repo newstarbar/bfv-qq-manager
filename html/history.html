@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            /* 设置字体 */
+            background-color: #f7f7f7;
+            /* 设置背景颜色 */
+            margin: 0;
+            padding: 20px;
+        }
+
+        .center-text {
+            text-align: center;
+            margin: 20px 0;
+            color: #333;
+            /* 设置标题颜色 */
+        }
+
+        .calendar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            margin: 20px;
+            background-color: #fff;
+            /* 设置日历背景颜色 */
+            padding: 10px;
+            border-radius: 8px;
+            /* 设置圆角 */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            /* 添加阴影 */
+        }
+
+        .day {
+            width: 50px;
+            height: 50px;
+            border-radius: 40%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 15px;
+            /* 增加间距 */
+            font-size: 20px;
+            color: white;
+        }
+
+        .clearfix {
+            width: 100%;
+            clear: both;
+        }
+
+        .online {
+            background-color: #4CAF50;
+            /* 绿色 */
+        }
+
+        .warming {
+            background-color: #FF9800;
+            /* 橙色 */
+        }
+
+        .offline {
+            background-color: #9E9E9E;
+            /* 灰色 */
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            gap: 20px;
+            /* 设置图例项之间的间距 */
+        }
+
+        .legend-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .legend-circle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-bottom: 5px;
+        }
+
+        .legend-text {
+            font-size: 12px;
+            color: #666;
+            /* 设置图例文本颜色 */
+        }
+    </style>
+</head>
+
+<body>
+    <h1 class="center-text">玩家: {{name}} 的上线情况{{year}}年{{month}}月</h1>
+    <h2 class="center-text">来自[Zygo]服务器</h2>
+    <div class="calendar">
+        {{calendar}}
+    </div>
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-circle offline"></div>
+            <span>未上线</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-circle online"></div>
+            <span>上线</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-circle warming"></div>
+            <span>暖服</span>
+        </div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>玩家统计数据</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #1a1a1a;
+            /* 深灰色背景 */
+            color: #ffffff;
+            /* 白色文字 */
+        }
+
+        .container {
+            width: 95%;
+            margin: 5px auto;
+            background: #222;
+            /* 深灰色背景 */
+            padding: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            font-size: 1.2em;
+        }
+
+        h1,
+        h2 {
+            color: #ffffff;
+            /* 白色标题 */
+            margin: 0 0 20px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid #333;
+            /* 深灰色边框 */
+        }
+
+        th {
+            background-color: #333;
+            /* 深灰色表头背景 */
+            color: #ffffff;
+            /* 白色表头文字 */
+        }
+
+        tr:hover {
+            background-color: #444;
+            /* 深灰色行背景 */
+        }
+
+        .footer {
+            text-align: center;
+            padding: 10px;
+            color: #cccccc;
+            /* 浅灰色页脚文字 */
+            font-size: 0.9em;
+        }
+
+        .BFBAN-green {
+            color: #00ff00;
+            /* 绿色 */
+        }
+
+        .BFBAN-red {
+            color: #ff0000;
+            /* 红色 */
+        }
+
+        .ROBOT-green {
+            color: #00ff00;
+            /* 绿色 */
+        }
+
+        .ROBOT-red {
+            color: #ff0000;
+            /* 红色 */
+        }
+
+        .abnormal-weapons {
+            color: #ff0000;
+            /* 红色 */
+        }
+
+        .normal-weapons {
+            color: #00ff00;
+            /* 绿色 */
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="player-info">
+            <h1>
+                <%= name %> [<%= personaId %>]
+            </h1>
+            <h2>
+                <strong>等级:</strong>
+                <%= playerLife.level %>
+                    &nbsp;&nbsp;
+                    <strong>KD:</strong>
+                    <%= playerLife.kd %>
+                        &nbsp;&nbsp;
+                        <strong>KPM:</strong>
+                        <%= playerLife.kpm %>
+                            <br>
+                            <strong>时间:</strong>
+                            <%= (playerLife.timePlayed / 60 / 60).toFixed(1) %> (h)
+                                &nbsp;&nbsp;
+            </h2>
+            <h2>
+                <strong class="normal-weapons">
+                    异常武器数量: 无
+                </strong>
+                &nbsp;&nbsp;
+                <strong class="<%= bfban.content === '石锤' ? 'BFBAN-red' : 'BFBAN-green' %>">BFBAN: <%= bfban.content %>
+                </strong>
+                &nbsp;&nbsp;
+                <strong
+                    class="<%= (community.content === '武器数据异常') || (community.content === '全局黑名单') ? 'ROBOT-red' : 'ROBOT-green' %>">ROBOT:
+                    <%= community.content %>
+                </strong>
+            </h2>
+        </div>
+
+        <div class="stats-container">
+            <div class="stats-container">
+                <div class="stats-box">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>名称</th>
+                                <th>击杀</th>
+                                <th>每分钟击杀</th>
+                                <th>时间(h)</th>
+                                <th>爆头率</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{AllWeaponDate}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="footer">
+                <p>
+                    查询时间: <%= currentTime %> |
+                        数据来源: BFBAN & BFV & EA
+                </p>
+            </div>
+        </div>
+</body>
+
+</html>
