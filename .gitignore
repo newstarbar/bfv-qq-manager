@@ -1,0 +1,4 @@
+node_modules
+dist
+bfv-manager-win.exe
+bfv-manager-linux.sh
