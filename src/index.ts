@@ -72,7 +72,7 @@ ws.on("message", async (data) => {
 					const today = new Date().toLocaleDateString();
 					// 处理戳一戳
 					if (aiManager) {
-						const res = await aiManager.aiSay(`今天是${today}，${e.nickname}戳了你一下，想要你讲一个战地冷笑话`);
+						const res = await aiManager.aiSay(`今天是${today}，${e.nickname}戳了你一下，想要你讲一个战地冷笑话，不要讲废话，直接说笑话，字数50字以内`);
 						sendMsgToQQGroupWithAI(e.group_id, res);
 					}
 				}
@@ -110,5 +110,5 @@ ws.on("error", (err) => {
 // 接收所有未处理的错误消息防止程序崩溃
 process.on("uncaughtException", (err) => {
 	const date = new Date();
-	logger.error(`未处理的错误: ${err.message}\n${err.stack}\n${date.toLocaleString()}`);
+	logger.error(`未处理的错误: ${err}\n${err.stack}\n${date.toLocaleString()}`);
 });

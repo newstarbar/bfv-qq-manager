@@ -1,6 +1,5 @@
 import { isPlayerNameExist, playerStatusInBfban, playerStatusInCommunity } from "../robot/cx/basePlayerQuery";
 import { handleAddGroupPlayerIsOnline } from "../robot/player/serverPlayerManager";
-import logger from "../utils/logger";
 import { groupRequest, setGroupMemberCard } from "./groupService";
 import { addOrUpdateMemberInfo, setPlayerNameAndPersonaId } from "./memberManager";
 import { sendMsgToQQGroup } from "./sendMessage";
@@ -68,8 +67,13 @@ export async function handleGroupRequest(group_id: number, user_id: number, flag
 			handleAddGroupPlayerIsOnline(group_id, name);
 		}, 1000);
 	} else {
-		// 玩家不存在或网络错误
-		groupRequest(flag, false, "不存在此玩家,请确认ID正确,请勿填入任何无关内容,该加群请求有机器人自动处理");
-		sendMsgToQQGroup(group_id, `=======加群模块========\n用户: ${user_id}\n申请ID: ${content}\n${result}\n【已自动拒绝】\n======================`, null);
+		if (result === "网络异常, 查询玩家名称失败") {
+			// groupRequest(flag, false, `[${result}],请重试!`);
+			sendMsgToQQGroup(group_id, `=======加群模块========\n用户: ${user_id}\n申请ID: ${content}\n${result}\n【需管理员手动处理】\n群管理手动处理加群请求\n==========`, null);
+		} else {
+			// 玩家不存在或网络错误
+			groupRequest(flag, false, "不存在此玩家,请确认ID正确,请勿填入任何无关内容,该加群请求有机器人自动处理");
+			sendMsgToQQGroup(group_id, `=======加群模块========\n用户: ${user_id}\n申请ID: ${content}\n${result}\n【已自动拒绝】\n======================`, null);
+		}
 	}
 }

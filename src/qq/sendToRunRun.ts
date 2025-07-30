@@ -117,7 +117,7 @@ export async function sendBanPlayerCmd(gameId: number, playerLifeData: PlayerLif
 	let cmd: string;
 	if (isTV) {
 		const { group_name: groupName } = await readConfigFile();
-		cmd = `/ban ${groupName} ${playerLifeData.name} ${reason}`;
+		cmd = `/tb ${groupName} ${playerLifeData.name} ${reason}`;
 		cmdList.push([cmd, "tvbot", "tvban"]);
 	} else {
 		cmd = `/ban ${playerLifeData.name} ${reason}`;
@@ -406,7 +406,7 @@ function onUnBanPlayerSuccessEvent() {
 
 			sendMsgToQQGroup(
 				group_id as number,
-				`======== 屏蔽模块 ========\n【服名】: ${serverName}\n--------------------------------\n等级: ${playerLevelStr}     时长: ${playTimeStr} 分钟\nK / D: ${playerKDStr}  KPM: ${playerKPMStr}\n--------------------------------\n【玩家】: ${playerName}\n【原因】: ${reason}\n【处理人】: ${adminName}\n\n【踢出玩家成功】n ======================`,
+				`========踢人模块========\n【服名】: ${serverName}\n--------------------------------\n等级: ${playerLevelStr}     时长: ${playTimeStr} 分钟\nK / D: ${playerKDStr}   KPM: ${playerKPMStr}\n--------------------------------\n【玩家】: ${playerName}\n【原因】: ${reason}\n【处理人】: ${adminName}\n\n【踢出玩家成功】======================`,
 				null
 			);
 		}
@@ -426,7 +426,7 @@ function onUnBanPlayerSuccessEvent() {
 
 			sendMsgToQQGroup(
 				group_id as number,
-				`======== 屏蔽模块 ========\n【服名】: ${serverName}\n\n【玩家】: ${playerName}\n【处理人】: ${adminName}\n\n【解除屏蔽玩家成功】\n ======================`,
+				`========屏蔽模块========\n【服名】: ${serverName}\n\n【玩家】: ${playerName}\n【处理人】: ${adminName}\n\n【解除屏蔽玩家成功】\n======================`,
 				null
 			);
 		}

@@ -64,7 +64,7 @@ export async function registerPlatoon(playerName: string, tag: string): Promise<
 			return message;
 		} catch (e) {
 			const error = (e as any).response;
-			const errMsg = error.data.error.message;
+			const errMsg = error.data.error;
 			if (errMsg === "Invalid Params: no valid session") {
 				return `EA查询的session已过期\n请重新设置`;
 			}
@@ -130,7 +130,7 @@ export async function getAllMember(name: string): Promise<string> {
 			const sessionRes = await updateSession(tag, cookie[0].sid);
 			return `战排:${name}的将军\n的session已过期\n${sessionRes}`;
 		}
-		return `未知错误\n${errData.error.message}`;
+		return `未知错误\n${errData.error}`;
 	}
 }
 
@@ -193,7 +193,7 @@ export async function getPlatoon(name: string): Promise<string> {
 			const sessionRes = await updateSession(tag, cookie[0].sid);
 			return `战排:${name}的将军\n的session已过期\n${sessionRes}`;
 		}
-		return `未知错误\n${errData.error.message}`;
+		return `未知错误\n${errData.error}`;
 	}
 }
 
@@ -249,7 +249,7 @@ export async function agreeApplication(tag: string, personaId: number): Promise<
 			const sessionRes = await updateSession(tag, cookie[0].sid);
 			return `战排:${tag}的将军\n的session已过期\n${sessionRes}`;
 		}
-		return `未知错误\n${errData.error.message}`;
+		return `未知错误\n${errData.error}`;
 	}
 }
 
@@ -304,7 +304,7 @@ export async function refuseApplication(tag: string, personaId: number): Promise
 			const sessionRes = await updateSession(tag, cookie[0].sid);
 			return `战排:${tag}的将军\n的session已过期\n${sessionRes}`;
 		}
-		return `未知错误\n${errData.error.message}`;
+		return `未知错误\n${errData.error}`;
 	}
 }
 
@@ -354,7 +354,7 @@ export async function kickMember(tag: string, personaId: number): Promise<string
 			const sessionRes = await updateSession(tag, cookie[0].sid);
 			return `战排:${tag}的将军\n的session已过期\n${sessionRes}`;
 		}
-		return `未知错误\n${errData.error.message}`;
+		return `未知错误\n${errData.error}`;
 	}
 }
 
@@ -370,7 +370,7 @@ async function getAndUpdateSession(tag: string, sid: string): Promise<string> {
 			session = res.data["X-GatewaySession"];
 		} catch (e) {
 			const error = (e as any).response;
-			return `获取session失败\n${error.message}`;
+			return `获取session失败\n${error}`;
 		}
 		await db.execute(`INSERT INTO sessions (tag, session) VALUES (?, ?)`, [tag, session]);
 	} else {
@@ -396,6 +396,6 @@ async function updateSession(tag: string, sid: string): Promise<string> {
 			return `更新session失败\n${e}`;
 		}
 	}
-	return "未查询到对应的cookie";
 	await db.close();
+	return "未查询到对应的cookie";
 }

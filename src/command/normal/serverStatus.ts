@@ -1,5 +1,5 @@
 import { Command } from "../../interface/command";
-import { GroupPlayer, Player, ServerStatus } from "../../interface/ServerInfo";
+import { GroupPlayer, Player, ServerStatus, Team } from "../../interface/ServerInfo";
 import { sendMsgToQQGroup } from "../../qq/sendMessage";
 import { getOnlineGroupMember } from "../../robot/hs/onlineHistory";
 import { serverPlayerManagers } from "../../robot/player/serverPlayerManager";
@@ -78,7 +78,12 @@ function generateServerStatus(serverStatus: ServerStatus, groupMember: GroupPlay
 	// 群友数量
 	const groupMemberCount = groupMember.filter((member) => member.server_name === serverStatus.zh_name).length;
 
-	const resultContent = `[${warmStatusStr}]\n${serverName}\n人数: ${soldier}/64 [${queue}]  观战: ${spectator}\n地图: ${mapName}[${mapMode}]\n群友: ${groupMemberCount}    真人: ${
+	const team1 = playerList.filter((player) => player.team === Team.one).length;
+	const team2 = playerList.filter((player) => player.team === Team.two).length;
+
+	const resultContent = `[${warmStatusStr}]\n${serverName}\n人数: ${
+		serverPlayers ? serverPlayers.players.soldier.length : 0
+	}[${team1}|${team2}]/64 [${queue}]  观战: ${spectator}\n地图: ${mapName}[${mapMode}]\n群友: ${groupMemberCount}    真人: ${
 		soldier - botNumber
 	}    bot: ${botNumber}\n监服: ${monitorsStr}\n======================\n`;
 

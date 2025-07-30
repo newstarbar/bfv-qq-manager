@@ -6,6 +6,7 @@ import { sendMsgToQQGroup } from "../../qq/sendMessage";
 import { fuzzySearch } from "../../utils/fuzzyQuery";
 import logger from "../../utils/logger";
 import { isGlobalBlackList, isLocalBlackList, isTempBlackList } from "../ban/backListManager";
+import { checkCardQueue } from "../cardQueue";
 import { addPlayerVehicleDetail, addPlayerWeaponDetail, addQueryPlayerLife } from "../eaApiManger";
 import { addDelGroupOnlineMember } from "../hs/onlineHistory";
 import { addWarmPlayer, getWarmPlayerList } from "../hs/warmServer";
@@ -75,6 +76,9 @@ export async function updatePlayerManagers(serverDict: { [key: string]: any }, s
 				isBot: botList.includes(player.name)
 			};
 		});
+
+		// 卡排队检测
+		checkCardQueue(serverConfig, team1, team2, queue, gameId);
 
 		let spectator: Player[] = [];
 		if (queryGameId.toString() == gameId) {
