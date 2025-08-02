@@ -421,17 +421,16 @@ class ServerPlayerManager implements PlayerManager {
 		// 踢出黑名单玩家(除超杀黑名单外)
 		for (const player of newPlayerlist) {
 			const isLocalBlack = await isLocalBlackList(player.personaId);
-			const isGlobalBlack = await isGlobalBlackList(player.personaId);
 			let isBlack = false;
 			let reason = "";
 			let admin: ServerAdmin = { name: "", user_id: 0 };
-			if (isGlobalBlack.length > 0) {
+			if (isLocalBlack.length > 0) {
 				isBlack = true;
-				reason = `全局群组黑名单[${isGlobalBlack[0].group_name}][${isGlobalBlack[0].reason}]`;
-				admin = { name: isGlobalBlack[0].admin_name, user_id: isGlobalBlack[0].admin_qq };
-			} else if (isLocalBlack.length > 0) {
-				isBlack = true;
-				reason = `本地黑名单[${isLocalBlack[0].reason}]`;
+				if (this.serverConfig.tv) {
+					reason = `${isLocalBlack[0].reason}`;
+				} else {
+					reason = `本地黑名单[${isLocalBlack[0].reason}]`;
+				}
 				admin = { name: isLocalBlack[0].admin_name, user_id: isLocalBlack[0].admin_qq };
 			}
 			// 踢出黑名单玩家

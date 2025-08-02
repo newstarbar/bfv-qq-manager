@@ -7,6 +7,7 @@ import { getAllServerConfig } from "../serverConfigManager";
 import { ServerConfig } from "../../interface/ServerInfo";
 import { sendMsgToQQFriend } from "../../qq/sendMessage";
 import { readConfigFile } from "../../utils/localFile";
+import { banPlayerCommand } from "../../command/admin1/banPlayer";
 
 const url = path.join(process.cwd(), "data", "blackList.db");
 const createLocalTableSql = `CREATE TABLE IF NOT EXISTS localBlackList (
@@ -36,7 +37,7 @@ const createTempTableSql = `CREATE TABLE IF NOT EXISTS tempBlackList (
 )`;
 
 /** 添加本地黑名单 */
-export async function addLocalBlackList(name: string, reason: string, admin_name: string, admin_qq: number): Promise<{ isSuccess: boolean; content: string }> {
+export async function addLocalBlackList(name: string, reason: string, admin_name: string, admin_qq: number, group_id: number, message_id: number): Promise<{ isSuccess: boolean; content: string }> {
 	// 查询personaId
 	const result = await isPlayerNameExist(name);
 	// 判断result的类型
@@ -52,6 +53,9 @@ export async function addLocalBlackList(name: string, reason: string, admin_name
 			const group_name = readConfigFile().group_name;
 			// 直接发送小电视屏蔽消息
 			sendMsgToQQFriend(`/ban ${group_name} ${name} ${reason}`, 3889013937);
+		} else {
+			// 顺便Ban一下
+			banPlayerCommand(name, `本地黑名单[${reason}]`, group_id, message_id, admin_qq, false);
 		}
 
 		// 是否已经存在

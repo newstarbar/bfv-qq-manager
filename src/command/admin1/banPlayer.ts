@@ -55,7 +55,7 @@ export class BanPlayerCommand implements Command {
 }
 
 /** 管理员屏蔽玩家指令 */
-export async function banPlayerCommand(playerName: string, reason: string, group_id: number, message_id: number, user_id: number): Promise<void> {
+export async function banPlayerCommand(playerName: string, reason: string, group_id: number, message_id: number, user_id: number, is_report = true): Promise<void> {
 	// 去掉reason所有空格
 	const newReason = reason.replace(/\s+/g, "");
 
@@ -76,7 +76,9 @@ export async function banPlayerCommand(playerName: string, reason: string, group
 	if (!result) {
 		const nearlyPlayers = queryNearlyName(playerName);
 		const nearlyPlayersStr = nearlyPlayers.length > 0 ? nearlyPlayers.join("\n\n") : "无任何近似名称玩家";
-		sendMsgToQQGroup(group_id, `========屏蔽模块========\n玩家${playerName}不存在\n请检查拼写或尝试以下近似匹配:\n\n${nearlyPlayersStr}\n======================`, message_id);
+		if (is_report) {
+			sendMsgToQQGroup(group_id, `========屏蔽模块========\n玩家${playerName}不存在\n请检查拼写或尝试以下近似匹配:\n\n${nearlyPlayersStr}\n======================`, message_id);
+		}
 	} else {
 		const gameId = result.serverPlayerManager.gameId;
 		const config = result.serverPlayerManager.serverConfig;
@@ -98,17 +100,21 @@ export async function banPlayerCommand(playerName: string, reason: string, group
 				isWarmed: false
 			};
 			// 屏蔽玩家
-			banResult = await banPlayer(gameId, playerLife, result.player.joinTime, newReason, config, admin, true);
+			banResult = await banPlayer(gameId, playerLife, result.player.joinTime, newReason, config, admin, is_report);
 		} else {
 			// 玩家存在，获取PlayerLife对象
 			const playerLife = result.queryPlayerLife;
 			// 屏蔽玩家
-			banResult = await banPlayer(gameId, playerLife, result.player.joinTime, newReason, config, admin, true);
+			banResult = await banPlayer(gameId, playerLife, result.player.joinTime, newReason, config, admin, is_report);
 		}
 		if (banResult.isCanBan) {
-			sendMsgToQQGroup(group_id, `========屏蔽模块========\n指令已下达等待执行\n>>>>>>>>>>>>>>>>>`, message_id);
+			if (is_report) {
+				sendMsgToQQGroup(group_id, `========屏蔽模块========\n指令已下达等待执行\n>>>>>>>>>>>>>>>>>`, message_id);
+			}
 		} else {
-			sendMsgToQQGroup(group_id, `========屏蔽模块========\n${banResult.reason}`, message_id);
+			if (is_report) {
+				sendMsgToQQGroup(group_id, `========屏蔽模块========\n${banResult.reason}`, message_id);
+			}
 		}
 	}
 }
@@ -148,7 +154,7 @@ async function unbanPlayerCommand(playerName: string, group_id: number, message_
 }
 
 /** 管理员踢出玩家指令 */
-async function kickPlayerCommand(playerName: string, reason: string, group_id: number, message_id: number, user_id: number): Promise<void> {
+async function kickPlayerCommand(playerName: string, reason: string, group_id: number, message_id: number, user_id: number, is_report = true): Promise<void> {
 	// 去掉reason所有空格
 	const newReason = reason.replace(/\s+/g, "");
 
@@ -169,7 +175,9 @@ async function kickPlayerCommand(playerName: string, reason: string, group_id: n
 	if (!result) {
 		const nearlyPlayers = queryNearlyName(playerName);
 		const nearlyPlayersStr = nearlyPlayers.length > 0 ? nearlyPlayers.join("\n\n") : "无任何近似名称玩家";
-		sendMsgToQQGroup(group_id, `========踢人模块========\n玩家${playerName}不存在\n请检查拼写或尝试以下近似匹配:\n\n${nearlyPlayersStr}\n==========`, message_id);
+		if (is_report) {
+			sendMsgToQQGroup(group_id, `========踢人模块========\n玩家${playerName}不存在\n请检查拼写或尝试以下近似匹配:\n\n${nearlyPlayersStr}\n==========`, message_id);
+		}
 	} else {
 		const gameId = result.serverPlayerManager.gameId;
 		const config = result.serverPlayerManager.serverConfig;
@@ -191,17 +199,21 @@ async function kickPlayerCommand(playerName: string, reason: string, group_id: n
 				isWarmed: false
 			};
 			// 踢出玩家
-			banResult = await kickPlayer(gameId, playerLife, result.player.joinTime, newReason, config, admin, true);
+			banResult = await kickPlayer(gameId, playerLife, result.player.joinTime, newReason, config, admin, is_report);
 		} else {
 			// 玩家存在，获取PlayerLife对象
 			const playerLife = result.queryPlayerLife;
 			// 踢出玩家
-			banResult = await kickPlayer(gameId, playerLife, result.player.joinTime, newReason, config, admin, true);
+			banResult = await kickPlayer(gameId, playerLife, result.player.joinTime, newReason, config, admin, is_report);
 		}
 		if (banResult.isCanBan) {
-			sendMsgToQQGroup(group_id, `========踢人模块========\n指令已下达等待执行\n>>>>>>>>>>>>>>>>>`, message_id);
+			if (is_report) {
+				sendMsgToQQGroup(group_id, `========踢人模块========\n指令已下达等待执行\n>>>>>>>>>>>>>>>>>`, message_id);
+			}
 		} else {
-			sendMsgToQQGroup(group_id, `========踢人模块========\n${banResult.reason}`, message_id);
+			if (is_report) {
+				sendMsgToQQGroup(group_id, `========踢人模块========\n${banResult.reason}`, message_id);
+			}
 		}
 	}
 }

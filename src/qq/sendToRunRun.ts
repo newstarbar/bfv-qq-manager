@@ -315,20 +315,6 @@ function onBanPlayerNotFoundEvent() {
 		isRunning = false;
 		return;
 	}
-	if (banPlayerTemp.isReport) {
-		const group_id = banPlayerTemp.config?.group_id;
-		let serverName = banPlayerTemp.config?.zh_name;
-		serverName = serverName?.replace("[MINI ROBOT]", "").replace("[mini robot]", "");
-
-		const playerName = banPlayerTemp.playerLife?.name;
-		const reason = banPlayerTemp.reason;
-
-		sendMsgToQQGroup(
-			group_id as number,
-			`【玩家】: ${playerName}\n【原因】: ${reason}\n\n【屏蔽玩家失败】\n原因: 未找到玩家所在的服务器\n请管理员复查该玩家是否在该服务器中\n当前失败次数: ${kickFailCount}次`,
-			null
-		);
-	}
 	isRunning = false;
 }
 
