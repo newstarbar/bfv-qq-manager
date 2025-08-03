@@ -330,7 +330,7 @@ function onBanPlayerNotFoundInfoEvent() {
 
 		sendMsgToQQGroup(
 			group_id as number,
-			`======== 屏蔽模块 ========\n【服名】: ${serverName}\n\n【玩家】: ${playerName}\n【原因】: ${reason}\n\n【屏蔽玩家失败】\n\n原因: 未找到玩家信息\n ======================`,
+			`========屏蔽模块========\n【服名】: ${serverName}\n\n【玩家】: ${playerName}\n【原因】: ${reason}\n\n【屏蔽玩家失败】\n\n原因: 未找到玩家信息\n ======================`,
 			null
 		);
 	}
@@ -351,7 +351,7 @@ function onBanPlayerNoPermissionEvent() {
 
 		sendMsgToQQGroup(
 			group_id as number,
-			`======== 屏蔽模块 ========\n【服名】: ${serverName}\n\n【玩家】: ${playerName}\n【原因】: ${reason}\n\n【屏蔽玩家失败】\n\n原因: 没有对应服务器的操作权限\n ======================`,
+			`========屏蔽模块========\n【服名】: ${serverName}\n\n【玩家】: ${playerName}\n【原因】: ${reason}\n\n【屏蔽玩家失败】\n\n原因: 没有对应服务器的操作权限\n ======================`,
 			null
 		);
 	}

@@ -1,6 +1,11 @@
 node_modules
 dist
+others
+logs
 bfv-manager-win.exe
+dataStatistics.exe
 bfv-manager-linux.sh
 bfv-manager.sh
+bombScanManager.sh
 build_steps.bat
+config.json

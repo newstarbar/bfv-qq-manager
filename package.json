@@ -10,10 +10,10 @@
 		"build": "tsc && ncc build dist/index.js -o dist && pkg dist/index.js -t win -o bfv-manager-win.exe --public && pkg dist/index.js -t linux -o bfv-manager-linux.sh --public",
 		"update": "tsc && cmd /c build_steps.bat",
 		"clean": "rimraf dist",
-		"test": "tsc && node dist/antherModel/dataStatistics.js",
-		"bomb": "tsc && ncc build dist/bombScanManager.js -o bomb && pkg bomb/index.js -t linux -o bombScanManager.sh --public",
-		"comp": "tsc && ncc build dist/antherModel/competitionSystem.js -o comp && pkg comp/index.js -t linux -o competitionSystem.sh --public",
-		"detail": "tsc && ncc build dist/antherModel/dataStatistics.js -o detail && pkg detail/index.js -t win -o dataStatistics.exe --public"
+		"test": "tsc && node dist/others/bombScanManager.js",
+		"bomb": "tsc && ncc build dist/others/bombScanManager.js -o dist/bomb && pkg dist/bomb/index.js -t linux -o bombScanManager.sh --public",
+		"comp": "tsc && ncc build dist/others/competitionSystem.js -o dist/comp && pkg dist/comp/index.js -t linux -o competitionSystem.sh --public",
+		"detail": "tsc && ncc build dist/others/dataStatistics.js -o dist/detail && pkg dist/detail/index.js -t win -o dataStatistics.exe --public"
 	},
 	"author": "newline星空",
 	"license": "GPL-3.0-or-later",

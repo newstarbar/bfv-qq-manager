@@ -48,6 +48,7 @@ import { EnableAiCommand } from "./admin2/enableAi";
 import { ocrBfvName } from "../qq/qqOCR";
 import { CurfewCommand } from "./admin2/curfew";
 import { SuperCommand } from "./admin2/superCommand";
+import { AllCommunityServer } from "./normal/allCommunityServer";
 
 let commandManagers: CommandManager | null = null;
 let privateCommandManagers: PrivateCommandManager | null = null;
@@ -208,6 +209,7 @@ class CommandManager {
 		this.commands.push(new RecordCommand());
 		this.commands.push(new RootCommand());
 		this.commands.push(new WarmCommand());
+		this.commands.push(new AllCommunityServer());
 		// admin1 commands
 		this.commands.push(new AdminSayCommand());
 		this.commands.push(new BanPlayerCommand());

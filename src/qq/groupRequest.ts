@@ -5,7 +5,7 @@ import { addOrUpdateMemberInfo, setPlayerNameAndPersonaId } from "./memberManage
 import { sendMsgToQQGroup } from "./sendMessage";
 
 /** 管理群邀请处理加群请求 */
-export async function handleGroupRequest(group_id: number, user_id: number, flag: any, content: string): Promise<void> {
+export async function handleGroupRequest(group_id: number, user_id: number, flag: any, content: string, tryCount: number = 0): Promise<void> {
 	const result = await isPlayerNameExist(content);
 	// 判断result的类型
 	if (typeof result !== "string") {
@@ -14,13 +14,20 @@ export async function handleGroupRequest(group_id: number, user_id: number, flag
 		const { isNormal: isCommunity, content: communityContent } = await playerStatusInCommunity(personaId);
 		if (!isCommunity) {
 			if (communityContent === "网络异常, 查询玩家社区状态失败") {
-				// groupRequest(flag, false, `[${communityContent}],请重试!`);
-				// sendMsgToQQGroup(group_id, `=======加群模块========\n用户: ${user_id}\n申请ID: ${content}\n${communityContent}\n【已自动拒绝】\n======================`, null);
-				sendMsgToQQGroup(
-					group_id,
-					`=======加群模块========\n用户: ${user_id}\n申请ID: ${content}\n${communityContent}\n【需管理员手动处理】\n群管理手动处理加群请求\n======================`,
-					null
-				);
+				if (tryCount < 3) {
+					// 重试
+					setTimeout(() => {
+						handleGroupRequest(group_id, user_id, flag, content, tryCount + 1);
+					}, 1000);
+				} else {
+					// groupRequest(flag, false, `[${communityContent}],请重试!`);
+					// sendMsgToQQGroup(group_id, `=======加群模块========\n用户: ${user_id}\n申请ID: ${content}\n${communityContent}\n【已自动拒绝】\n======================`, null);
+					sendMsgToQQGroup(
+						group_id,
+						`=======加群模块========\n用户: ${user_id}\n申请ID: ${content}\n${communityContent}\n【需管理员手动处理】\n群管理手动处理加群请求\n======================`,
+						null
+					);
+				}
 			} else {
 				groupRequest(flag, false, `[${communityContent}],拒绝申请加入,请移步联Ban[QQ群]747413170 进行申诉`);
 				sendMsgToQQGroup(group_id, `=======加群模块========\n用户: ${user_id}\n申请ID: ${content}\n${communityContent}\n【已自动拒绝】\n======================`, null);
@@ -68,8 +75,15 @@ export async function handleGroupRequest(group_id: number, user_id: number, flag
 		}, 1000);
 	} else {
 		if (result === "网络异常, 查询玩家名称失败") {
-			// groupRequest(flag, false, `[${result}],请重试!`);
-			sendMsgToQQGroup(group_id, `=======加群模块========\n用户: ${user_id}\n申请ID: ${content}\n${result}\n【需管理员手动处理】\n群管理手动处理加群请求\n==========`, null);
+			if (tryCount < 3) {
+				// 重试
+				setTimeout(() => {
+					handleGroupRequest(group_id, user_id, flag, content, tryCount + 1);
+				}, 1000);
+			} else {
+				// groupRequest(flag, false, `[${result}],请重试!`);
+				sendMsgToQQGroup(group_id, `=======加群模块========\n用户: ${user_id}\n申请ID: ${content}\n${result}\n【需管理员手动处理】\n群管理手动处理加群请求\n==========`, null);
+			}
 		} else {
 			// 玩家不存在或网络错误
 			groupRequest(flag, false, "不存在此玩家,请确认ID正确,请勿填入任何无关内容,该加群请求有机器人自动处理");
