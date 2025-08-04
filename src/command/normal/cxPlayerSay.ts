@@ -1,8 +1,7 @@
 import { Command } from "../../interface/command";
-import { setPlayerNameAndPersonaId } from "../../qq/memberManager";
 import { sendMsgToQQGroup } from "../../qq/sendMessage";
-import { isPlayerNameExist, playerStatusInBfban, playerStatusInCommunity } from "../../robot/cx/basePlayerQuery";
-import logger from "../../utils/logger";
+import { cxPlayerSay } from "../../robot/cx/cxPlayerSay";
+import { readConfigFile } from "../../utils/localFile";
 import { padString } from "../../utils/stringTool";
 
 export class CXPlayerSayCommand implements Command {
@@ -24,33 +23,8 @@ export class CXPlayerSayCommand implements Command {
 
 	async execute(command: string, group_id: number, message_id: number, user_id: number): Promise<any> {
 		const playerName = command.match(this.regex)![2];
-		const result = await isPlayerNameExist(playerName);
-		// 判断result的类型
-		if (typeof result !== "string") {
-			const name = result.name;
-			const personaId = result.personaId;
-			const { isNormal: isCommunity, content: communityContent } = await playerStatusInCommunity(personaId);
-			if (!isCommunity) {
-				sendMsgToQQGroup(group_id, `=======绑定模块========\n\n【绑定新ID失败】\n【原因】: ${communityContent}\n======================`, message_id);
-				return;
-			}
-			const { isNormal: isBfban, content: bfbanContent } = await playerStatusInBfban(personaId);
-			if (!isBfban) {
-				sendMsgToQQGroup(group_id, `=======绑定模块========\n\n【绑定新ID失败】\n【原因】: ${bfbanContent}\n======================`, message_id);
-				return;
-			}
-			// 绑定成功
-			const oldName = await setPlayerNameAndPersonaId(group_id, user_id, name, personaId);
-			sendMsgToQQGroup(
-				group_id,
-				`=======绑定模块========\n前ID: ${oldName}\n新ID: ${name}\n[${personaId}]\n【社区】: ${communityContent}\n【BFBAN】: ${bfbanContent}\n【注册时间】: ${
-					result.registerDate.split("T")[0]
-				}\n【最后登录】: ${result.lastLogin.split("T")[0]}\n\n【绑定新ID成功】\n======================`,
-				message_id
-			);
-		} else {
-			// 玩家不存在或网络错误
-			sendMsgToQQGroup(group_id, `=======绑定模块========\n\n【绑定新ID失败】\n【原因】: ${result}\n======================`, message_id);
-		}
+		const groupName = await readConfigFile().group_name;
+		const result = await cxPlayerSay(playerName, groupName);
+		sendMsgToQQGroup(group_id, result, message_id);
 	}
 }

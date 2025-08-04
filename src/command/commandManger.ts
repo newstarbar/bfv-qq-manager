@@ -49,6 +49,7 @@ import { ocrBfvName } from "../qq/qqOCR";
 import { CurfewCommand } from "./admin2/curfew";
 import { SuperCommand } from "./admin2/superCommand";
 import { AllCommunityServer } from "./normal/allCommunityServer";
+import { CXPlayerSayCommand } from "./normal/cxPlayerSay";
 
 let commandManagers: CommandManager | null = null;
 let privateCommandManagers: PrivateCommandManager | null = null;
@@ -210,6 +211,8 @@ class CommandManager {
 		this.commands.push(new RootCommand());
 		this.commands.push(new WarmCommand());
 		this.commands.push(new AllCommunityServer());
+		this.commands.push(new CXPlayerSayCommand());
+
 		// admin1 commands
 		this.commands.push(new AdminSayCommand());
 		this.commands.push(new BanPlayerCommand());
@@ -217,6 +220,7 @@ class CommandManager {
 		this.commands.push(new StartServerCommand());
 		this.commands.push(new UpdateCommand());
 		this.commands.push(new CheckCommand());
+
 		// admin2 commands
 		this.commands.push(new BlackPlayerCommand());
 		this.commands.push(new ServerSystemCommand());
@@ -225,12 +229,14 @@ class CommandManager {
 		this.commands.push(new CurfewCommand());
 		this.commands.push(new SuperCommand());
 		this.commands.push(new PlatoonCommand());
+
 		// admin3 commands
 		this.commands.push(new ClearMemberCommand());
 		this.commands.push(new SetAdminCommand());
 		this.commands.push(new ServerConfigCommand());
 		this.commands.push(new ServerSayConfigCommand());
 		this.commands.push(new SetWarmCommand());
+
 		// pay commands
 		this.commands.push(new TrackPlayerCommand());
 	}

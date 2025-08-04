@@ -27,6 +27,7 @@ export interface ServerStatus {
 	spectator: number;
 	queue: number;
 	rotationIndex: number;
+	currentTime: number;
 }
 
 /** 队伍编号 */

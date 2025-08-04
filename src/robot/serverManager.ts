@@ -122,7 +122,8 @@ export async function addServerToMainLoop(serverConfig: ServerConfig): Promise<v
 				soldier: server.slots.Soldier.current,
 				spectator: server.slots.Spectator.current,
 				queue: server.slots.Queue.current,
-				rotationIndex: 0
+				rotationIndex: 0,
+				currentTime: new Date().getTime()
 			}
 		]);
 		setServerOnline(serverConfig.tag, true);
@@ -203,6 +204,7 @@ async function serverMainLoop(): Promise<void> {
 		// 服务器是否换地图
 		if (result.rotationIndex != queryServerList[queryIndex][1].rotationIndex) {
 			queryServerList[queryIndex][1].rotationIndex = result.rotationIndex;
+			queryServerList[queryIndex][1].currentTime = new Date().getTime();
 
 			const lastMapName = translateMapModeName(queryServerList[queryIndex][1].mapName);
 			const currentMapName = translateMapModeName(result.mapName);

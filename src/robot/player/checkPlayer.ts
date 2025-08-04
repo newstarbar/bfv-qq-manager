@@ -166,7 +166,7 @@ export async function handleWaitBanPlayerInWarm(gameId: number, isWarm: boolean,
 				}
 			}
 			const { gameId, playerLifeData, joinTime, reason, config, admin } = player;
-			banPlayer(gameId, playerLifeData, joinTime, reason, config, admin);
+			kickPlayer(gameId, playerLifeData, joinTime, reason, config, admin);
 		}
 		waitBanPlayerInWarm = [];
 		// 暖服成功后，处理待踢出玩家
@@ -288,34 +288,18 @@ export async function checkPlayersLimit(gameId: number, playerLifeData: PlayerLi
 	}
 	if (isNeedBan) {
 		// 踢出玩家
-		if (!isTV) {
-			if (!isWarm && isWarmNotBanStr !== "") {
-				waitBanPlayerInWarm.push({
-					gameId,
-					playerLifeData,
-					joinTime,
-					reason: banReason,
-					config,
-					admin: botAdmin,
-					isWarmNotBanStr: isWarmNotBanStr
-				});
-			} else {
-				banPlayer(gameId, playerLifeData, joinTime, banReason, config, botAdmin);
-			}
+		if (!isWarm && isWarmNotBanStr !== "") {
+			waitKickPlayerInWarm.push({
+				gameId,
+				playerLifeData,
+				joinTime,
+				reason: banReason,
+				config,
+				admin: botAdmin,
+				isWarmNotBanStr: isWarmNotBanStr
+			});
 		} else {
-			if (!isWarm && isWarmNotBanStr !== "") {
-				waitKickPlayerInWarm.push({
-					gameId,
-					playerLifeData,
-					joinTime,
-					reason: banReason,
-					config,
-					admin: botAdmin,
-					isWarmNotBanStr: isWarmNotBanStr
-				});
-			} else {
-				kickPlayer(gameId, playerLifeData, joinTime, banReason, config, botAdmin);
-			}
+			kickPlayer(gameId, playerLifeData, joinTime, banReason, config, botAdmin);
 		}
 	}
 }

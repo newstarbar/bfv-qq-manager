@@ -8,4 +8,5 @@ bfv-manager-linux.sh
 bfv-manager.sh
 bombScanManager.sh
 build_steps.bat
+*.db
 /config.json
