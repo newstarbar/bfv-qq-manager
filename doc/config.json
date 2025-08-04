@@ -1,0 +1,11 @@
+{
+	"ws_ip": "127.0.0.1:3001",
+	"ws_token": "napcat",
+	"http_ip": "127.0.0.1:3000",
+	"http_token": "napcat",
+	"bot_name": "服管机器人",
+	"bot_qq": "",
+	"admin_qq": "",
+	"group_name": "",
+	"ai_tooken": ""
+}
