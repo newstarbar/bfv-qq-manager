@@ -274,42 +274,44 @@ class ServerPlayerManager implements PlayerManager {
 	async gameEndEvent(): Promise<void> {
 		logger.debug(`服务器: ${this.serverName} 一局结束========================>>>>>>>>>`);
 
-		batchCheckPlayersDataSaveOrLeave(this.players.soldier, this.serverConfig, "settle");
+		// batchCheckPlayersDataSaveOrLeave(this.players.soldier, this.serverConfig, "settle");
 
 		// 检测玩家数据，武器数据
-		// for (const player of this.players.soldier) {
-		//     const name = player.name;
-		//     const personaId = player.personaId;
+		for (const player of this.players.soldier) {
+			const name = player.name;
+			const personaId = player.personaId;
 
-		//     logger.debug(`GAME_END_EVENT 服务器: ${this.serverName} 玩家: ${name} 开始检测数据`);
+			logger.debug(`GAME_END_EVENT 服务器: ${this.serverName} 玩家: ${name} 开始检测数据`);
 
-		//     const resWeapons = await addPlayerWeaponDetail(personaId);
-		//     const resVehicle = await addPlayerVehicleDetail(personaId);
-		//     const weapons = handlePlayerWeapon(resWeapons, "ea");
-		//     const vehicle = handlePlayerVehicle(resVehicle, "ea");
-		//     const { sumKills, sumTime } = await refreshPlayerData(name, personaId, this.serverName, weapons, vehicle, "settle");
+			const resWeapons = await addPlayerWeaponDetail(personaId);
+			const resVehicle = await addPlayerVehicleDetail(personaId);
+			const weapons = handlePlayerWeapon(resWeapons, "ea");
+			const vehicle = handlePlayerVehicle(resVehicle, "ea");
+			const { sumKills, sumTime } = await refreshPlayerData(name, personaId, this.serverName, weapons, vehicle, "settle");
 
-		//     if (sumKills > 0) {
-		//         logger.warn(`玩家 ${name} 总击杀数: ${sumKills}, 总时间: ${sumTime} 分钟`);
-		//     }
+			if (sumKills > 0) {
+				logger.warn(`玩家 ${name} 总击杀数: ${sumKills}, 总时间: ${sumTime} 分钟`);
+			}
 
-		//     if (player.isWarmed) {
-		//         continue;
-		//     }
-		//     // 是否是群友
-		//     const groupList = await filterGroupMember(this.serverConfig.group_id, [player]);
-		//     if (groupList.length > 0) {
-		//         if (sumKills > this.serverConfig.kill) {
-		//             logger.warn(`群内玩家 ${player.name} 超杀, 击杀数: ${sumKills} > ${this.serverConfig.kill}`);
-		//             sendMsgToQQGroup(this.serverConfig.group_id, `群内玩家 ${player.name} 超杀, 击杀数: ${sumKills} > ${this.serverConfig.kill}\n超杀系统开发中...\n本条消息需管理员核实`, null);
-		//         }
-		//     } else {
-		//         if (sumKills > this.serverConfig.nokill) {
-		//             logger.warn(`路人玩家 ${player.name} 超杀, 击杀数: ${sumKills} > ${this.serverConfig.nokill}`);
-		//             sendMsgToQQGroup(this.serverConfig.group_id, `未加群玩家 ${player.name} 超杀, 击杀数: ${sumKills} > ${this.serverConfig.nokill}\n超杀系统开发中...\n本条消息需管理员核实`, null);
-		//         }
-		//     }
-		// }
+			if (player.isWarmed) {
+				continue;
+			}
+			// 是否是群友
+			const groupList = await filterGroupMember(this.serverConfig.group_id, [player]);
+			if (groupList.length > 0) {
+				if (sumKills > this.serverConfig.kill) {
+					logger.warn(`群内玩家 ${player.name} 超杀, 击杀数: ${sumKills} > ${this.serverConfig.kill}`);
+					sendMsgToQQGroup(this.serverConfig.group_id, `群内玩家 ${player.name} 超杀, 击杀数: ${sumKills} > ${this.serverConfig.kill}\n超杀系统开发中...\n本条消息需管理员核实`, null);
+					sendMsgToQQGroup(this.serverConfig.group_id, `/recent ${player.name}`, null, 3889013937);
+				}
+			} else {
+				if (sumKills > this.serverConfig.nokill) {
+					logger.warn(`路人玩家 ${player.name} 超杀, 击杀数: ${sumKills} > ${this.serverConfig.nokill}`);
+					sendMsgToQQGroup(this.serverConfig.group_id, `未加群玩家 ${player.name} 超杀, 击杀数: ${sumKills} > ${this.serverConfig.nokill}\n超杀系统开发中...\n本条消息需管理员核实`, null);
+					sendMsgToQQGroup(this.serverConfig.group_id, `/recent ${player.name}`, null, 3889013937);
+				}
+			}
+		}
 	}
 
 	/** 暖服事件 */
