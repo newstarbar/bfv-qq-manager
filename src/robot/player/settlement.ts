@@ -42,11 +42,6 @@ const maxCount = 6 * 12; // 12分钟
 // 处理队列
 async function handleQueue() {
 	if (waitQueue.length > 0) {
-		// 过滤名称相同的玩家
-		waitQueue = waitQueue.filter((item, index, arr) => {
-			return arr.findIndex((item2) => item2.playerName === item.playerName) === index;
-		});
-
 		const playerNameList = waitQueue.map((item) => item.playerName);
 		const res = await statusAxios().post("batch/player/lastest", {
 			playerNames: playerNameList,
@@ -125,6 +120,12 @@ async function isOverkill(settlement: Settlement, playerKills: number) {
 
 // 加入待处理队列
 export function addToQueue(gameId: number, serverConfig: ServerConfig, player: Player) {
+	// 是否已经在队列中
+	const exist = waitQueue.find((item) => item.playerName == player.name);
+	if (exist) {
+		return;
+	}
+
 	waitQueue.push({ serverConfig, gameId, playerName: player.name, player, count: 1 });
 }
 

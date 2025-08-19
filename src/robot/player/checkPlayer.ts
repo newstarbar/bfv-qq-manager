@@ -296,12 +296,6 @@ export async function checkBanReason(config: ServerConfig, playerLifeData: Playe
 		return { isCanBan: false, reason: `玩家: ${playerLifeData.name}是暖服成员, 解除超杀限制` };
 	}
 
-	// 群友检测
-	const isGroup = await isGroupMember(config.group_id, playerLifeData.name);
-	if (isGroup && reason.includes("超杀")) {
-		return { isCanBan: false, reason: `玩家: ${playerLifeData.name}是群友, 只能用限杀屏蔽` };
-	}
-
 	// 特殊无限制服, 关键词检测
 	let serverName = config.zh_name;
 	serverName = serverName.toLowerCase().trim();

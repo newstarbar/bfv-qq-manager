@@ -66,7 +66,7 @@ export async function handleGroupRequest(group_id: number, user_id: number, flag
 			setGroupMemberCard(group_id, user_id, name);
 			sendMsgToQQGroup(
 				group_id,
-				`pb=[昵称] 查被踢原因\n例: pb=ID\n\n有事找_督战队_最近在线\n=====================\n游玩时请确认群昵称自动修改\n例: "游戏中-ID"\n\n如未出现请及时确认ID正确\n注意大小写\n\n不正确的ID, 导致系统无法识别\n而被踢出游戏的\n【请自行承担责任】\n【未按要求备注被踢需自担责任】`,
+				`pb=[昵称] 查被踢原因\n例: pb=ID\n\n=====================\n游玩时请确认群昵称自动修改\n例: "游戏中-ID"\n\n注意大小写, 不正确的ID, 导致系统无法识别\n而被踢出游戏的\n【未按要求备注被踢需自担责任】\n【修改ID使用指令bind=ID】`,
 				null,
 				user_id
 			);
