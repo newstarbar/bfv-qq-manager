@@ -229,7 +229,7 @@ class ServerPlayerManager implements PlayerManager {
 		this.players.bot = players.bot;
 
 		// 服务器自动播报模块
-		serverAutoSayUpdate(this.serverConfig, afterWarmEventPlayers, this.isWarm);
+		serverAutoSayUpdate(this.gameId, this.serverConfig, afterWarmEventPlayers, this.isWarm);
 
 		// 执行进入事件
 		if (joinPlayers.length > 0) {

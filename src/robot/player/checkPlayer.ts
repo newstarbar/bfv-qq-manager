@@ -249,7 +249,7 @@ export async function banPlayer(
 	// 发送屏蔽命令
 	sendBanPlayerCmd(gameId, playerLifeData, joinTime, reason, config, admin, isReport);
 	// 游戏内发送屏蔽消息
-	adminBanKick(`玩家: ${playerLifeData.name} 已被屏蔽游戏 原因: ${reason} 处理人: ${admin.name}`, admin.name);
+	adminBanKick(gameId, `玩家: ${playerLifeData.name} 已被屏蔽游戏 原因: ${reason} 处理人: ${admin.name}`, admin.name);
 	return { isCanBan: true, reason: "" };
 }
 
@@ -278,7 +278,7 @@ export async function kickPlayer(
 	// 发送踢出命令
 	sendKickPlayerCmd(gameId, playerLifeData, joinTime, reason, config, admin, isReport);
 	// 游戏内发送踢出消息
-	adminBanKick(`玩家: ${playerLifeData.name} 已被踢出游戏 原因: ${reason} 处理人: ${admin.name}`, admin.name);
+	adminBanKick(gameId, `玩家: ${playerLifeData.name} 已被踢出游戏 原因: ${reason} 处理人: ${admin.name}`, admin.name);
 	return { isCanBan: true, reason: "" };
 }
 

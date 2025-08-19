@@ -2,7 +2,7 @@ import { Player, ServerConfig } from "../interface/ServerInfo";
 import { sendMsgToQQGroup } from "../qq/sendMessage";
 
 /** 卡排队阈值 */
-const CARD_QUEUE_THRESHOLD = 7;
+const CARD_QUEUE_THRESHOLD = 6;
 /** 踢卡排队冷却时间 */
 const KICK_CARD_QUEUE_COOLDOWN = 5 * 60 * 1000; // 5分钟
 /** 当前卡排队冷却时间 */

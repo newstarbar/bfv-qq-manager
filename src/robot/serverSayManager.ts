@@ -27,6 +27,7 @@ interface SayQueue {
 	playerName: string;
 	sid: string;
 	content: string;
+	gameId: number;
 }
 
 const botqq = readConfigFile().bot_qq;
@@ -48,7 +49,7 @@ export async function serverSayManager(): Promise<void> {
 	if (sayQueue.length === 0) {
 		return;
 	}
-	const { type, playerName, sid, content } = sayQueue.shift()!;
+	const { type, playerName, sid, content, gameId } = sayQueue.shift()!;
 	if (content === "") {
 		return;
 	}
@@ -64,12 +65,24 @@ export async function serverSayManager(): Promise<void> {
 			message = `【屏蔽消息】${content}`;
 			break;
 	}
-	await bfvAxios()
-		.post("player/sendMessage", {
+	let params = {};
+	if (gameId === 0) {
+		params = {
 			remid: "remid",
 			sid: sid,
 			content: message
-		})
+		};
+	} else {
+		params = {
+			remid: "remid",
+			sid: sid,
+			content: message,
+			gameId: gameId
+		};
+	}
+
+	await bfvAxios()
+		.post("player/sendMessage", params)
 		.then((res) => {
 			// logger.info(`播报信息 ${playerName} ${res.data}`)
 		})
@@ -89,7 +102,7 @@ let onlineAdminList: any[] = [];
 let validSayAdminList: { user_id: number; player_name: string; sid: string; is_valid: boolean; tag: string }[] = [];
 
 /** 服务器自动播报刷新模块 */
-export async function serverAutoSayUpdate(serverConfig: ServerConfig, serverPlayers: ServerPlayers, isWarm: boolean): Promise<void> {
+export async function serverAutoSayUpdate(gameId: number, serverConfig: ServerConfig, serverPlayers: ServerPlayers, isWarm: boolean): Promise<void> {
 	const soldierPlayers = serverPlayers.soldier.filter((player) => !player.isBot);
 	const queuePlayers = serverPlayers.queue.filter((player) => !player.isBot);
 	const spectatorPlayers = serverPlayers.spectator.filter((player) => !player.isBot);
@@ -171,12 +184,13 @@ export async function serverAutoSayUpdate(serverConfig: ServerConfig, serverPlay
 		type: "notice",
 		playerName: randomAdmin.player_name,
 		sid: randomAdmin.sid,
-		content: sayText
+		content: sayText,
+		gameId: gameId
 	});
 }
 
 /** 管理员发送消息 */
-export async function adminSay(playerName: string, content: string): Promise<string> {
+export async function adminSay(gameId: number, playerName: string, content: string): Promise<string> {
 	// 是否在游戏中
 	if (!onlineAdminList.some((admin) => admin.player_name === playerName)) {
 		return "你当前不在游戏中, 无法发送消息";
@@ -192,13 +206,14 @@ export async function adminSay(playerName: string, content: string): Promise<str
 		type: "speech",
 		playerName: playerName,
 		sid: sid,
-		content: content
+		content: content,
+		gameId: gameId
 	});
 	return "消息已加入播报队列, 等待发送中";
 }
 
 /** 屏蔽消息 */
-export async function adminBanKick(content: string, playerName: string | null = null): Promise<void> {
+export async function adminBanKick(gameId: number, content: string, playerName: string | null = null): Promise<void> {
 	// 是否有在线管理员在游戏中
 	if (validSayAdminList.length === 0) {
 		return;
@@ -219,7 +234,8 @@ export async function adminBanKick(content: string, playerName: string | null = 
 		type: "warn",
 		playerName: admin.player_name,
 		sid: sid,
-		content: content
+		content: content,
+		gameId: gameId
 	});
 }
 
