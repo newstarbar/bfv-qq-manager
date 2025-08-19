@@ -2,6 +2,7 @@ node_modules
 dist
 others
 logs
+chrome
 bfv-manager-win.exe
 dataStatistics.exe
 bfv-manager-linux.sh

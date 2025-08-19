@@ -65,7 +65,7 @@ function generateServerStatus(serverStatus: ServerStatus, groupMember: GroupPlay
 		.replace("[mini ROBOT]", "")
 		.replace("[TV ROBOT]", "")
 		.replace("[QQ ROBOT]", "");
-	const soldier = serverStatus.soldier;
+
 	const queue = serverStatus.queue;
 	const spectator = serverStatus.spectator;
 	const mapName = translateMapModeName(serverStatus.mapName);
@@ -88,7 +88,7 @@ function generateServerStatus(serverStatus: ServerStatus, groupMember: GroupPlay
 	const resultContent = `[${warmStatusStr}]     对局: ${currentTimeStr}\n${serverName}\n人数: ${
 		serverPlayers ? serverPlayers.players.soldier.length : 0
 	}[${team1}|${team2}]/64 [${queue}]  观战: ${spectator}\n地图: ${mapName}[${mapMode}]\n群友: ${groupMemberCount}    真人: ${
-		soldier - botNumber
+		serverPlayers ? serverPlayers.players.soldier.length - botNumber : 0
 	}    bot: ${botNumber}\n监服: ${monitorsStr}\n======================\n`;
 
 	return resultContent;

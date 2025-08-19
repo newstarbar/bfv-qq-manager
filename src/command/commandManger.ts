@@ -69,12 +69,6 @@ export async function commandManager(e: any): Promise<void> {
 	const { message_type, group_id, user_id, message_id } = e;
 	const message: string = e.raw_message.trim();
 
-	// 是否是群组联盟消息
-	if (message_type == "group" && group_id == 1041827068 && user_id == 3825017241) {
-		receiveGroupAllianceEvent(e);
-		return;
-	}
-
 	// 实例化命令管理器
 	if (!commandManagers) {
 		commandManagers = new CommandManager();
@@ -165,6 +159,21 @@ export async function isGroupInit(group_id: number): Promise<boolean> {
 		logger.error(`查询当前群聊是否已经初始化失败：${error}`);
 		await db.close();
 		return false;
+	}
+}
+
+/** 查询所有初始化过的群聊 */
+export async function getAllInitGroup(): Promise<number[]> {
+	const db = new SQLiteDB(url, createTableSql);
+	try {
+		await db.open();
+		const result = await db.query(`SELECT group_id FROM groupReceiver`);
+		await db.close();
+		return result.map((item) => item.group_id);
+	} catch (error) {
+		logger.error(`查询所有初始化过的群聊失败：${error}`);
+		await db.close();
+		return [];
 	}
 }
 
@@ -315,9 +324,9 @@ class CommandManager {
 			// 是否是图片
 			if (e.message && e.message[0] && e.message[0].type == "image") {
 				if (e.message[0].data.summary === "[动画表情]") {
-					updateFaceUrls(e.message[0].data.url);
+					updateFaceUrls(e.message[0].data.url, e.group_id);
 				} else {
-					const result = await ocrBfvName(e.user_id, e.message[0].data.url);
+					const result = await ocrBfvName(e.group_id, e.user_id, e.message[0].data.url);
 					if (result) {
 						await sendMsgToQQGroup(e.group_id, `尝试识别BFV玩家名称:\n${result}`, e.message_id, null);
 					}

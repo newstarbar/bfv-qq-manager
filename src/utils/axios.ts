@@ -47,6 +47,15 @@ export function eaAxios(): AxiosInstance {
 	return eaInstance;
 }
 
+let statusInstance: AxiosInstance;
+/** 获取玩家战绩查询API实例 */
+export function statusAxios(): AxiosInstance {
+	if (!statusInstance) {
+		statusInstance = createStatusInstance();
+	}
+	return statusInstance;
+}
+
 // 创建HttpNapcat实例
 function createQQInstance(): AxiosInstance {
 	const config = readConfigFile();
@@ -60,20 +69,17 @@ function createQQInstance(): AxiosInstance {
 	return instance;
 }
 
-// 本地国外服务器代理
-let proxyIP: string = "http://43.163.119.160:6992/";
-let proxyInstance: AxiosInstance;
-export function proxyAxios(): AxiosInstance {
-	if (!proxyInstance) {
-		proxyInstance = axios.create({
-			baseURL: proxyIP,
-			headers: {
-				"Content-Type": "application/json"
-			},
-			timeout: 10000
-		});
-	}
-	return proxyInstance;
+// 玩家战绩查询服务端API
+function createStatusInstance(): AxiosInstance {
+	const { status_ip } = readConfigFile();
+	const instance = axios.create({
+		baseURL: `http://${status_ip}/`,
+		headers: {
+			"Content-Type": "application/json"
+		},
+		timeout: 10000
+	});
+	return instance;
 }
 
 // 创建HttpBFV实例

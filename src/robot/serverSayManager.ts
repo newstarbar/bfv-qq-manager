@@ -4,7 +4,7 @@ import { SQLiteDB } from "../utils/sqlite";
 import { Player, ServerConfig, ServerPlayers } from "../interface/ServerInfo";
 import { getAdminMemberInfo } from "../qq/memberManager";
 import { expireCookie, getAllCookie } from "../qq/cookieManager";
-import { bfvAxios, proxyAxios } from "../utils/axios";
+import { bfvAxios } from "../utils/axios";
 import { getServerConfig } from "./serverConfigManager";
 import { AxiosError } from "axios";
 import { readConfigFile } from "../utils/localFile";
@@ -75,9 +75,9 @@ export async function serverSayManager(): Promise<void> {
 		})
 		.catch((e) => {
 			const err = e as AxiosError;
-			const message = err.response?.data as any;
-			logger.error(`播报消息失败：${playerName} ${message}`);
-			if (message === "无效的Cookie") {
+			const error = err.response?.data as any;
+			logger.error(`播报消息失败：${playerName} ${JSON.stringify(error)}`);
+			if (error.message === "无效的Cookie") {
 				// 移除无效的cookie
 				expireCookie(playerName);
 			}

@@ -1,5 +1,7 @@
+import path from "path";
 import { qqAxios } from "../utils/axios";
 import logger from "../utils/logger";
+import { SQLiteDB } from "../utils/sqlite";
 
 /** 不需要的关键词 */
 const unWantList = ["T34", "LVT"];
@@ -7,12 +9,19 @@ const unWantList = ["T34", "LVT"];
 // 无需识别的user_id
 const unNeedUserId = [2854211804, 3889013937];
 
-// 是否开启OCR识别
-let ocrFlag = true;
+const url = path.join(process.cwd(), "data", "groupReceiver.db");
+const createIsOCRTableSql = `CREATE TABLE IF NOT EXISTS groupIsOCR (
+	group_id INTEGER PRIMARY KEY,
+	isEnable INTEGER NOT NULL DEFAULT 0
+)`;
 
 /** OCR提取游戏id */
-export async function ocrBfvName(user_id: number, imgUrl: string): Promise<string | null> {
-	if (!ocrFlag) {
+export async function ocrBfvName(group_id: number, user_id: number, imgUrl: string): Promise<string | null> {
+	const db = new SQLiteDB(url, createIsOCRTableSql);
+	await db.open();
+	const sql = "SELECT isEnable FROM groupIsOCR WHERE group_id = ?";
+	const row = await db.query(sql, [group_id]);
+	if (row.length > 0 && row[0].isEnable === 0) {
 		return null;
 	}
 
@@ -104,6 +113,9 @@ export async function ocrWarmCount(imgUrl: string): Promise<{ text: string; warm
 	return null;
 }
 
-export function setOcrFlag(flag: boolean) {
-	ocrFlag = flag;
+export async function setOcrFlag(group_id: number, flag: boolean) {
+	const db = new SQLiteDB(url, createIsOCRTableSql);
+	await db.open();
+	await db.execute("INSERT OR REPLACE INTO groupIsOCR (group_id, isEnable) VALUES (?,?)", [group_id, flag ? 1 : 0]);
+	await db.close();
 }

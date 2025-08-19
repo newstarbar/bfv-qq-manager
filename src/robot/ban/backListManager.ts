@@ -2,12 +2,13 @@ import path from "path";
 import { SQLiteDB } from "../../utils/sqlite";
 import { isPlayerNameExist } from "../cx/basePlayerQuery";
 import { getNowDATETIME } from "../../utils/timeTool";
-import { LocalBlackPlayer } from "../../interface/player";
+import { LocalBlackPlayer, TempBlackPlayer } from "../../interface/player";
 import { getAllServerConfig } from "../serverConfigManager";
 import { ServerConfig } from "../../interface/ServerInfo";
 import { sendMsgToQQFriend } from "../../qq/sendMessage";
 import { readConfigFile } from "../../utils/localFile";
 import { banPlayerCommand } from "../../command/admin1/banPlayer";
+import { getAdminMemberInfo } from "../../qq/memberManager";
 
 const url = path.join(process.cwd(), "data", "blackList.db");
 const createLocalTableSql = `CREATE TABLE IF NOT EXISTS localBlackList (
@@ -53,10 +54,9 @@ export async function addLocalBlackList(name: string, reason: string, admin_name
 			const group_name = readConfigFile().group_name;
 			// 直接发送小电视屏蔽消息
 			sendMsgToQQFriend(`/ban ${group_name} ${name} ${reason}`, 3889013937);
-		} else {
-			// 顺便Ban一下
-			banPlayerCommand(name, `本地黑名单[${reason}]`, group_id, message_id, admin_qq, false);
 		}
+		// 顺便Ban一下
+		banPlayerCommand(name, `本地黑名单[${reason}]`, group_id, message_id, admin_qq, false);
 
 		// 是否已经存在
 		const querySql = `SELECT * FROM localBlackList WHERE personaId = ?`;
@@ -171,7 +171,7 @@ export async function addTempBlackList(name: string, personaId: number, reason_t
 }
 
 /** 查看所有临时黑名单 */
-export async function getAllTempBlackList(): Promise<{ name: string; personaId: number; reason_type: string; reason_text: string; time: string }[]> {
+export async function getAllTempBlackList(): Promise<TempBlackPlayer[]> {
 	const db = new SQLiteDB(url, createTempTableSql);
 	await db.open();
 	const querySql = `SELECT * FROM tempBlackList ORDER BY time DESC`;
@@ -181,7 +181,7 @@ export async function getAllTempBlackList(): Promise<{ name: string; personaId: 
 }
 
 /** 是否是临时黑名单 */
-export async function isTempBlackList(personaId: number): Promise<{ name: string; reason_type: string; reason_text: string; time: string }[]> {
+export async function isTempBlackList(personaId: number): Promise<TempBlackPlayer[]> {
 	const db = new SQLiteDB(url, createTempTableSql);
 	await db.open();
 	const querySql = `SELECT * FROM tempBlackList WHERE personaId = ?`;
@@ -191,13 +191,13 @@ export async function isTempBlackList(personaId: number): Promise<{ name: string
 }
 
 /** 移除临时黑名单 */
-export async function removeTempBlackList(name: string): Promise<string> {
+export async function removeTempBlackList(personaId: number): Promise<string> {
 	const db = new SQLiteDB(url, createTempTableSql);
 	await db.open();
-	const sql = `DELETE FROM tempBlackList WHERE name = ?`;
-	await db.execute(sql, [name]);
+	const sql = `DELETE FROM tempBlackList WHERE personaId = ?`;
+	await db.execute(sql, [personaId]);
 	await db.close();
-	return `移除${name}的临时黑名单成功`;
+	return `移除${personaId}的临时黑名单成功`;
 }
 
 /** 添加全局黑名单 */

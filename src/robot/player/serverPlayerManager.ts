@@ -5,15 +5,14 @@ import { filterGroupMember } from "../../qq/memberManager";
 import { sendMsgToQQGroup } from "../../qq/sendMessage";
 import { fuzzySearch } from "../../utils/fuzzyQuery";
 import logger from "../../utils/logger";
-import { isGlobalBlackList, isLocalBlackList, isTempBlackList } from "../ban/backListManager";
+import { isLocalBlackList, isTempBlackList, removeTempBlackList } from "../ban/backListManager";
 import { checkCardQueue } from "../cardQueue";
-import { addPlayerVehicleDetail, addPlayerWeaponDetail, addQueryPlayerLife } from "../eaApiManger";
 import { addDelGroupOnlineMember } from "../hs/onlineHistory";
 import { addWarmPlayer, getWarmPlayerList } from "../hs/warmServer";
 import { serverAutoSayUpdate } from "../serverSayManager";
-import { getBotList, isBot } from "./botManager";
-import { banPlayer, checkPlayersLife, batchCheckPlayersData, checkPlayersWeaponVehicle, deletePlayerLifeCache, getPlayerLifeCache, batchCheckPlayersDataSaveOrLeave } from "./checkPlayer";
-import { refreshPlayerData } from "./playerRecord";
+import { getBotList } from "./botManager";
+import { banPlayer, checkPlayersLife, checkPlayersWeaponVehicle, deletePlayerLifeCache, getPlayerLifeCache, kickPlayer } from "./checkPlayer";
+import { addToQueue } from "./settlement";
 
 /** 服务器内玩家管理器 */
 export let serverPlayerManagers: ServerPlayerManager[] = [];
@@ -274,43 +273,8 @@ class ServerPlayerManager implements PlayerManager {
 	async gameEndEvent(): Promise<void> {
 		logger.debug(`服务器: ${this.serverName} 一局结束========================>>>>>>>>>`);
 
-		// batchCheckPlayersDataSaveOrLeave(this.players.soldier, this.serverConfig, "settle");
-
-		// 检测玩家数据，武器数据
 		for (const player of this.players.soldier) {
-			const name = player.name;
-			const personaId = player.personaId;
-
-			logger.debug(`GAME_END_EVENT 服务器: ${this.serverName} 玩家: ${name} 开始检测数据`);
-
-			const resWeapons = await addPlayerWeaponDetail(personaId);
-			const resVehicle = await addPlayerVehicleDetail(personaId);
-			const weapons = handlePlayerWeapon(resWeapons, "ea");
-			const vehicle = handlePlayerVehicle(resVehicle, "ea");
-			const { sumKills, sumTime } = await refreshPlayerData(name, personaId, this.serverName, weapons, vehicle, "settle");
-
-			if (sumKills > 0) {
-				logger.warn(`玩家 ${name} 总击杀数: ${sumKills}, 总时间: ${sumTime} 分钟`);
-			}
-
-			if (player.isWarmed) {
-				continue;
-			}
-			// 是否是群友
-			const groupList = await filterGroupMember(this.serverConfig.group_id, [player]);
-			if (groupList.length > 0) {
-				if (sumKills > this.serverConfig.kill) {
-					logger.warn(`群内玩家 ${player.name} 超杀, 击杀数: ${sumKills} > ${this.serverConfig.kill}`);
-					sendMsgToQQGroup(this.serverConfig.group_id, `群内玩家 ${player.name} 超杀, 击杀数: ${sumKills} > ${this.serverConfig.kill}\n超杀系统开发中...\n本条消息需管理员核实`, null);
-					sendMsgToQQGroup(this.serverConfig.group_id, `/recent ${player.name}`, null, 3889013937);
-				}
-			} else {
-				if (sumKills > this.serverConfig.nokill) {
-					logger.warn(`路人玩家 ${player.name} 超杀, 击杀数: ${sumKills} > ${this.serverConfig.nokill}`);
-					sendMsgToQQGroup(this.serverConfig.group_id, `未加群玩家 ${player.name} 超杀, 击杀数: ${sumKills} > ${this.serverConfig.nokill}\n超杀系统开发中...\n本条消息需管理员核实`, null);
-					sendMsgToQQGroup(this.serverConfig.group_id, `/recent ${player.name}`, null, 3889013937);
-				}
-			}
+			addToQueue(this.gameId, this.serverConfig, player);
 		}
 	}
 
@@ -350,6 +314,16 @@ class ServerPlayerManager implements PlayerManager {
 				// 记录暖服玩家数据
 				const warmPlayers = team1.concat(team2).filter((player) => !player.isWarmed);
 				await addWarmPlayer(this.serverName, warmPlayers);
+
+				// 查询暖服玩家是否有超杀临时黑名单记录
+				warmPlayers.forEach(async (player) => {
+					const isTempBlack = await isTempBlackList(player.personaId);
+					if (isTempBlack.length > 0) {
+						// 解除临时黑名单
+						await removeTempBlackList(player.personaId);
+						sendMsgToQQGroup(this.serverConfig.group_id, `暖服玩家[${player.name}]\n已自动解除临时黑名单`, null);
+					}
+				});
 
 				// 设置暖服玩家的isWarmed为true
 				newSoldier.forEach((player) => {
@@ -417,10 +391,35 @@ class ServerPlayerManager implements PlayerManager {
 			}
 		}
 
-		// 是否为暖服期间，【是】则记录超杀玩家是否完成暖服，【否】则直接踢出超杀黑名单
-		// TODO
+		// 是否是临时黑名单玩家
+		for (let player of players) {
+			const isLocalBlack = await isTempBlackList(player.personaId);
+			if (isLocalBlack.length > 0) {
+				// 是否为暖服期间
+				if (this.isWarm) {
+					// 直接踢出
+					const reason = `${isLocalBlack[0].reason_type}临时黑名单[${isLocalBlack[0].reason_text}]`;
+					const admin: ServerAdmin = { name: "机器人", user_id: 0 };
+					const tempPlayerLife: PlayerLife = {
+						name: player.name,
+						personaId: player.personaId,
+						level: -1,
+						kills: -1,
+						deaths: -1,
+						timePlayed: -1,
+						wins: -1,
+						losses: -1,
+						longestHeadShot: -1,
+						kpm: -1,
+						kd: -1,
+						isWarmed: player.isWarmed
+					};
+					kickPlayer(this.gameId, tempPlayerLife, player.joinTime, reason, this.serverConfig, admin, true);
+				}
+			}
+		}
 
-		// 踢出黑名单玩家(除超杀黑名单外)
+		// 屏蔽黑名单玩家(除超杀黑名单外)
 		for (const player of newPlayerlist) {
 			const isLocalBlack = await isLocalBlackList(player.personaId);
 			let isBlack = false;
@@ -456,13 +455,9 @@ class ServerPlayerManager implements PlayerManager {
 		}
 
 		// 检测生涯数据，超过限制直接踢出
-		if (players.length > 10) {
-			batchCheckPlayersData(this.gameId, newPlayerlist, this.serverConfig, this.isWarm);
-		} else {
-			checkPlayersLife(this.gameId, newPlayerlist, this.serverConfig, this.isWarm);
-			// 检测武器数据是否异常，异常则踢出
-			checkPlayersWeaponVehicle(this.gameId, players, this.serverConfig);
-		}
+		checkPlayersLife(this.gameId, newPlayerlist, this.serverConfig, this.isWarm);
+		// 检测武器数据是否异常，异常则踢出
+		checkPlayersWeaponVehicle(this.gameId, players, this.serverConfig);
 
 		// 上线记录，群昵称显示-游戏中
 		addDelGroupOnlineMember(this.serverConfig.group_id, this.serverName, newPlayerlist, true);
@@ -480,50 +475,9 @@ class ServerPlayerManager implements PlayerManager {
 		// 群昵称取消-游戏中
 		await addDelGroupOnlineMember(this.serverConfig.group_id, this.serverName, players, false);
 
-		if (players.length > 10) {
-			batchCheckPlayersDataSaveOrLeave(players, this.serverConfig, "leave");
-		} else {
-			// 检测玩家数据，武器数据
-			for (const player of players) {
-				const name = player.name;
-				const personaId = player.personaId;
-
-				logger.debug(`LEAVE_ONLY 服务器: ${this.serverName} 玩家: ${name} 开始检测数据`);
-
-				const resWeapons = await addPlayerWeaponDetail(personaId);
-				const resVehicle = await addPlayerVehicleDetail(personaId);
-				const weapons = handlePlayerWeapon(resWeapons, "ea");
-				const vehicle = handlePlayerVehicle(resVehicle, "ea");
-				const { sumKills, sumTime } = await refreshPlayerData(name, personaId, this.serverName, weapons, vehicle, "leave");
-
-				if (sumKills > 0) {
-					logger.warn(`玩家 ${name} 总击杀数: ${sumKills}, 总时间: ${sumTime} 分钟`);
-				}
-
-				if (player.isWarmed) {
-					continue;
-				}
-				// 是否是群友
-				const groupList = await filterGroupMember(this.serverConfig.group_id, [player]);
-				if (groupList.length > 0) {
-					if (sumKills > this.serverConfig.kill) {
-						logger.warn(`群内玩家 ${player.name} 超杀, 击杀数: ${sumKills} > ${this.serverConfig.kill}`);
-						sendMsgToQQGroup(this.serverConfig.group_id, `群内玩家 ${player.name} 超杀, 击杀数: ${sumKills} > ${this.serverConfig.kill}\n超杀系统异常率较高\n需管理员核实以下信息`, null);
-						sendMsgToQQGroup(this.serverConfig.group_id, `/recent ${player.name}`, null, 3889013937);
-					}
-				} else {
-					if (sumKills > this.serverConfig.nokill) {
-						logger.warn(`未加群玩家 ${player.name} 超杀, 击杀数: ${sumKills} > ${this.serverConfig.nokill}`);
-						sendMsgToQQGroup(
-							this.serverConfig.group_id,
-							`未加群玩家 ${player.name} 超杀, 击杀数: ${sumKills} > ${this.serverConfig.nokill}\n超杀系统异常率较高\n需管理员核实以下信息`,
-							null
-						);
-						sendMsgToQQGroup(this.serverConfig.group_id, `/recent ${player.name}`, null, 3889013937);
-					}
-				}
-			}
-		}
+		players.forEach((player) => {
+			addToQueue(this.gameId, this.serverConfig, player);
+		});
 	}
 
 	/** 服务器关闭事件 */

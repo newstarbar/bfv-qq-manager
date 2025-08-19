@@ -10,10 +10,10 @@
 		"build": "tsc && ncc build dist/index.js -o dist && pkg dist/index.js -t win -o bfv-manager-win.exe --public && pkg dist/index.js -t linux -o bfv-manager-linux.sh --public",
 		"update": "tsc && cmd /c build_steps.bat",
 		"clean": "rimraf dist",
-		"test": "tsc && node dist/index.js",
+		"test": "tsc && node dist/dataStatistics.js",
 		"bomb": "tsc && ncc build dist/others/bombScanManager.js -o dist/bomb && pkg dist/bomb/index.js -t linux -o bombScanManager.sh --public",
 		"comp": "tsc && ncc build dist/others/competitionSystem.js -o dist/comp && pkg dist/comp/index.js -t linux -o competitionSystem.sh --public",
-		"detail": "tsc && ncc build dist/others/dataStatistics.js -o dist/detail && pkg dist/detail/index.js -t win -o dataStatistics.exe --public"
+		"detail": "tsc && ncc build dist/dataStatistics.js -o dist/detail && pkg dist/detail/index.js -t win -o dataStatistics.exe --public"
 	},
 	"author": "newline星空",
 	"license": "GPL-3.0-or-later",
@@ -30,10 +30,12 @@
 	},
 	"dependencies": {
 		"@types/express": "^5.0.1",
+		"@types/jimp": "^0.2.28",
 		"@types/sqlite3": "^5.1.0",
 		"axios": "^1.9.0",
 		"ejs": "^3.1.10",
 		"express": "^4.21.2",
+		"jimp": "^1.6.0",
 		"log4js": "^6.9.1",
 		"onebot": "^4.0.0",
 		"pkg": "^5.8.1",

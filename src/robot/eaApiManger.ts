@@ -62,12 +62,12 @@ export function initEeAxiosManager() {
 			} catch (err) {
 				const error = (err as any).response;
 				if (error === undefined) {
-					logger.error(`请求EA失败: ${task.method}, ${err}`);
+					logger.error(`请求EA失败: ${task.method}, ${task.params}, ${err}`);
 					task.reject(err);
 				} else {
 					const errMsg = error.data.error;
-					logger.error(`请求EA失败: ${task.method}, ${errMsg}`);
-					// task.reject(errMsg);
+					logger.error(`请求EA失败: ${task.method}, ${task.params}, ${errMsg}`);
+					task.reject(errMsg);
 					if (errMsg === "Invalid Params: no valid session") {
 						logger.info("EA查服的Session失效, 正在更新...");
 						sessionUpdateCount++;

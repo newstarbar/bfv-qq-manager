@@ -1,7 +1,7 @@
 import { Player, PlayerManager, ServerConfig, ServerStatus, Team } from "../interface/ServerInfo";
 import { sendMsgToQQGroup } from "../qq/sendMessage";
 import { sendStartServerCmd } from "../qq/sendToRunRun";
-import { bfvAxios, gtAxios, proxyAxios } from "../utils/axios";
+import { bfvAxios, gtAxios } from "../utils/axios";
 import logger from "../utils/logger";
 import { addQueryServer, addQueryServerDetail } from "./eaApiManger";
 import { getAllServerConfig, getServerConfig, setServerOnline } from "./serverConfigManager";
@@ -32,6 +32,11 @@ export async function startServerCommand(tag: string, group_id: number, message_
 	// 服务器是否已经开启
 	if (serverConfig[0].is_onlined) {
 		await sendMsgToQQGroup(group_id, `序号: ${tag}服务器已经开启`, message_id);
+		return;
+	}
+	// 是否是小电视服务器
+	if (serverConfig[0].tv) {
+		await sendMsgToQQGroup(group_id, `序号: ${tag}服务器为小电视服务器\n禁止使用该指令`, message_id);
 		return;
 	}
 	// 开启服务器

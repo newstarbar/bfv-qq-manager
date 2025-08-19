@@ -2,15 +2,16 @@ import { readConfigFile } from "./utils/localFile";
 import logger from "./utils/logger";
 import { WebSocket } from "ws";
 import { checkHttpStatus, sendMsgToQQGroup, sendMsgToQQGroupWithAI } from "./qq/sendMessage";
-import { commandManager, isGroupInit } from "./command/commandManger";
+import { commandManager, getAllInitGroup, isGroupInit } from "./command/commandManger";
 import { initEaManger } from "./robot/eaApiManger";
 import { initServerRestart, startServerLoop } from "./robot/serverManager";
 import { initCmdManager } from "./qq/sendToRunRun";
 import { handleGroupRequest } from "./qq/groupRequest";
 import { deleteMemberInfo, getMemberInfo } from "./qq/memberManager";
 import { initSayTimer } from "./robot/serverSayManager";
-import { aiManager, initAiManager } from "./qq/aiSay/aiManager";
+import { aiManagers, initAiManager } from "./qq/aiSay/aiManager";
 import { initTimeManager } from "./qq/timeManager";
+import { initSettlementTimer } from "./robot/player/settlement";
 
 // 连接ws和http状态
 const { ws_ip, ws_token, bot_qq, bot_name } = readConfigFile();
@@ -43,8 +44,13 @@ ws.on("message", async (data) => {
 						initCmdManager();
 						// 注册服务器播报定时器
 						initSayTimer();
+						// 注册玩家结算定时器
+						initSettlementTimer();
 						// 注册ai聊天
-						initAiManager(bot_name, bot_qq);
+						const allGroups = await getAllInitGroup();
+						for (const group of allGroups) {
+							await initAiManager(group, bot_name, bot_qq);
+						}
 						// 注册时间模块
 						initTimeManager();
 					}, 500);
@@ -71,8 +77,8 @@ ws.on("message", async (data) => {
 					// 今天日期
 					const today = new Date().toLocaleDateString();
 					// 处理戳一戳
-					if (aiManager) {
-						const res = await aiManager.aiSay(`今天是${today}，${e.nickname}戳了你一下，想要你讲一个战地冷笑话，不要讲废话，直接说笑话，字数50字以内`);
+					if (aiManagers[e.group_id]) {
+						const res = await aiManagers[e.group_id].aiSay(`今天是${today}，${e.nickname}戳了你一下，想要你讲一个战地冷笑话，不要讲废话，直接说笑话，字数50字以内`);
 						sendMsgToQQGroupWithAI(e.group_id, res);
 					}
 				}

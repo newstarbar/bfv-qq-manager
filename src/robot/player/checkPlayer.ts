@@ -1,20 +1,16 @@
-import { AxiosError } from "axios";
 import { PlayerLife } from "../../interface/player";
 import { Player, ServerAdmin, ServerConfig } from "../../interface/ServerInfo";
-import { filterGroupMember, getAdminMemberInfo, isGroupMember } from "../../qq/memberManager";
+import { getAdminMemberInfo, isGroupMember } from "../../qq/memberManager";
 import { sendMsgToQQGroup } from "../../qq/sendMessage";
 import { sendBanPlayerCmd, sendKickPlayerCmd } from "../../qq/sendToRunRun";
 import { readConfigFile } from "../../utils/localFile";
 import logger from "../../utils/logger";
 import { getNowDATETIME } from "../../utils/timeTool";
 import { addBanRecord } from "../ban/banRecord";
-import { addPlayerVehicleDetail, addPlayerWeaponDetail, addQueryPlayerLife } from "../eaApiManger";
+import { addQueryPlayerLife } from "../eaApiManger";
 import { isWarmPlayer } from "../hs/warmServer";
-import { gtAxios } from "../../utils/axios";
 import { handlePlayerLife } from "../../common/handleData/handlePlayerLife";
 import { adminBanKick } from "../serverSayManager";
-import { refreshPlayerData } from "./playerRecord";
-import { handlePlayerVehicle, handlePlayerWeapon } from "../../common/handleData/handlePlayerWeapon";
 
 // 缓存玩家数据
 let playerLifeCacheList: PlayerLife[] = [];
@@ -32,100 +28,25 @@ export async function checkPlayersLife(gameId: number, players: Player[], config
 		const name = player.name;
 		const personaId = player.personaId;
 		const isWarmed = player.isWarmed;
-		try {
-			// 调用EA接口查询生涯数据
-			const res = await addQueryPlayerLife(personaId);
-			// 构造生涯数据对象
-			const playerLifeData = handlePlayerLife(name, personaId, isWarmed, res, "ea");
-			// 缓存生涯数据
-			playerLifeCacheList.push(playerLifeData);
-			// 检测玩家数据是否超过限制
-			checkPlayersLimit(gameId, playerLifeData, players, config, isWarm);
-		} catch (e: any) {
-			logger.error("EA查询生涯数据失败, 原因: " + e.toString().slice(-100));
-		}
+		checkPlayerLife(personaId, name, isWarmed, gameId, players, config, isWarm);
 	}
 }
 
-/** 批量查询玩家所有数据 */
-export async function batchCheckPlayersData(gameId: number, players: Player[], config: ServerConfig, isWarm: boolean): Promise<void> {
-	handleWaitBanPlayerInWarm(gameId, isWarm, config);
-
-	const personaIdList = players.map((player) => player.personaId);
+/** 封装后的查询玩家生涯数据 */
+async function checkPlayerLife(personaId: number, name: string, isWarmed: boolean, gameId: number, players: Player[], config: ServerConfig, isWarm: boolean): Promise<void> {
 	try {
-		const res = await gtAxios().post("bfv/multiple/?raw=false&format_values=true", personaIdList, {
-			timeout: 30000
-		});
-		const playerStatsList: any[] = res.data.data;
-		for (const playerStats of playerStatsList) {
-			// 对应的玩家数据
-			const player = players.find((item) => item.personaId === playerStats.id);
-			if (!player) {
-				continue;
-			}
-			const name = player.name;
-			const isWarmed = player.isWarmed;
-			// 构造生涯数据对象
-			const playerLifeData = handlePlayerLife(name, playerStats.personaId, isWarmed, playerStats, "gt");
-			// 缓存生涯数据
-			playerLifeCacheList.push(playerLifeData);
-			// 检测玩家数据是否超过限制
-			checkPlayersLimit(gameId, playerLifeData, players, config, isWarm);
-
-			// 处理武器、载具数据
-			const weapons = handlePlayerWeapon(playerStats.weapons, "gt");
-			const vehicle = handlePlayerVehicle(playerStats.vehicles, "gt");
-			await refreshPlayerData(name, playerStats.id, config.zh_name, weapons, vehicle, "join");
-		}
-	} catch (e) {
-		const err = e as AxiosError;
-		const status = err.response?.status;
-		logger.error(`批量查询玩家生涯数据失败, 原因: ${e}, 状态码: ${status}`);
-	}
-}
-
-/** 批量查询玩家所有数据（保存、离开） */
-export async function batchCheckPlayersDataSaveOrLeave(players: Player[], config: ServerConfig, type: "settle" | "leave"): Promise<void> {
-	const personaIdList = players.map((player) => player.personaId);
-	try {
-		const res = await gtAxios().post("bfv/multiple/?raw=false&format_values=true", personaIdList, {
-			timeout: 30000
-		});
-		const playerStatsList: any[] = res.data.data;
-		for (const playerStats of playerStatsList) {
-			// 对应的玩家数据
-			const player = players.find((item) => item.personaId === playerStats.id);
-			if (!player) {
-				continue;
-			}
-			const name = player.name;
-			logger.debug(`BATCH_LEAVE_OR_SETTLE 服务器: ${config.zh_name} 玩家: ${name} 开始检测数据`);
-
-			// 处理武器、载具数据
-			const weapons = handlePlayerWeapon(playerStats.weapons, "gt");
-			const vehicle = handlePlayerVehicle(playerStats.vehicles, "gt");
-			const { sumKills, sumTime } = await refreshPlayerData(name, playerStats.id, config.zh_name, weapons, vehicle, type);
-			if (player.isWarmed) {
-				continue;
-			}
-			// 是否是群友
-			const groupList = await filterGroupMember(config.group_id, [player]);
-			if (groupList.length > 0) {
-				if (sumKills > config.kill) {
-					logger.warn(`群内玩家 ${player.name} 超杀, 击杀数: ${sumKills} > ${config.kill}`);
-					sendMsgToQQGroup(config.group_id, `群内玩家 ${player.name} 超杀, 击杀数: ${sumKills} > ${config.kill}\n超杀系统开发中...\n本条消息需管理员核实`, null);
-				}
-			} else {
-				if (sumKills > config.nokill) {
-					logger.warn(`路人玩家 ${player.name} 超杀, 击杀数: ${sumKills} > ${config.nokill}`);
-					sendMsgToQQGroup(config.group_id, `未加群玩家 ${player.name} 超杀, 击杀数: ${sumKills} > ${config.nokill}\n超杀系统开发中...\n本条消息需管理员核实`, null);
-				}
-			}
-		}
-	} catch (e) {
-		const err = e as AxiosError;
-		const status = err.response?.status;
-		logger.error(`批量查询玩家生涯数据失败, 原因: ${e}, 状态码: ${status}`);
+		// 调用EA接口查询生涯数据
+		const res = await addQueryPlayerLife(personaId);
+		// 构造生涯数据对象
+		const playerLifeData = handlePlayerLife(name, personaId, isWarmed, res, "ea");
+		// 缓存生涯数据
+		playerLifeCacheList.push(playerLifeData);
+		// 检测玩家数据是否超过限制
+		checkPlayersLimit(gameId, playerLifeData, players, config, isWarm);
+	} catch (e: any) {
+		logger.error("EA查询生涯数据失败, 原因: " + e.toString().slice(-100));
+		// 重新查询
+		checkPlayerLife(personaId, name, isWarmed, gameId, players, config, isWarm);
 	}
 }
 
@@ -137,12 +58,10 @@ export async function checkPlayersWeaponVehicle(gameId: number, players: Player[
 		const isWarmed = player.isWarmed;
 		try {
 			// 调用EA接口查询武器数据
-			const resWeapons = await addPlayerWeaponDetail(personaId);
-			const resVehicle = await addPlayerVehicleDetail(personaId);
-			const weapons = handlePlayerWeapon(resWeapons, "ea");
-			const vehicle = handlePlayerVehicle(resVehicle, "ea");
-			await refreshPlayerData(name, personaId, config.zh_name, weapons, vehicle, "join");
-
+			// const resWeapons = await addPlayerWeaponDetail(personaId);
+			// const resVehicle = await addPlayerVehicleDetail(personaId);
+			// const weapons = handlePlayerWeapon(resWeapons, "ea");
+			// const vehicle = handlePlayerVehicle(resVehicle, "ea");
 			// 检测玩家数据是否异常
 			// TODO
 		} catch (e: any) {
@@ -302,6 +221,7 @@ export async function checkPlayersLimit(gameId: number, playerLifeData: PlayerLi
 			kickPlayer(gameId, playerLifeData, joinTime, banReason, config, botAdmin);
 		}
 	}
+	logger.info(`玩家 ${playerLifeData.name} 生涯数据检测完毕`);
 }
 
 /** 屏蔽玩家 */

@@ -31,12 +31,12 @@ export class EnableAiCommand implements Command {
 	async execute(command: string, group_id: number, message_id: number, user_id: number): Promise<any> {
 		if (this.regex.test(command)) {
 			const enable = command.match(this.regex)![2];
-			setEnable(enable === "1");
+			setEnable(group_id, enable === "1");
 			const content = `已${enable === "1" ? "开启" : "关闭"}ai`;
 			await sendMsgToQQGroup(group_id, content, message_id);
 		} else if (this.regex2.test(command)) {
 			const enable = command.match(this.regex2)![2];
-			setOcrFlag(enable === "1");
+			setOcrFlag(group_id, enable === "1");
 			const content = `已${enable === "1" ? "开启" : "关闭"}OCR识别`;
 			await sendMsgToQQGroup(group_id, content, message_id);
 		}

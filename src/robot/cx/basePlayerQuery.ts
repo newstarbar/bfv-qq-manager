@@ -1,11 +1,11 @@
 import { AxiosError } from "axios";
-import { bfbanAxios, bfvAxios, proxyAxios } from "../../utils/axios";
+import { bfbanAxios, bfvAxios } from "../../utils/axios";
 import { PlayerBaseInfo } from "../../interface/player";
 import { readConfigFile } from "../../utils/localFile";
 
 const botqq = readConfigFile().bot_qq;
 /** 查询playerName是否存在 */
-export async function isPlayerNameExist(playerName: string): Promise<PlayerBaseInfo | string> {
+export async function isPlayerNameExist(playerName: string, count = 0): Promise<PlayerBaseInfo | string> {
 	try {
 		const result = await bfvAxios().get("bfv/player", {
 			params: {
@@ -25,8 +25,13 @@ export async function isPlayerNameExist(playerName: string): Promise<PlayerBaseI
 		const code = (err.response?.data as any)?.code;
 		if (code === "player.not_found") {
 			return "此玩家不存在";
+		} else {
+			if (count < 2) {
+				return isPlayerNameExist(playerName, count + 1);
+			} else {
+				return "网络异常, 查询玩家名称失败";
+			}
 		}
-		return "网络异常, 查询玩家名称失败";
 	}
 }
 

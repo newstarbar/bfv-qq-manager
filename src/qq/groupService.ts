@@ -200,3 +200,24 @@ export async function setGroupWholeBan(groupId: number, isBan: boolean): Promise
 		logger.error(`[${error.code}] 响应数据：${JSON.stringify(error.message)}`);
 	}
 }
+
+/** 发送语音 */
+export async function sendVoiceToQQGroup(groupId: number, content: string): Promise<void> {
+	try {
+		await qqAxios()
+			.post("send_group_ai_record", {
+				group_id: groupId,
+				character: "lucy-voice-suxinjiejie",
+				text: content
+			})
+			.then((res) => {
+				const data = res.data;
+				if (data.status === "failed") {
+					logger.error(`发送语音失败: ${data.message}`);
+				}
+			});
+	} catch (err) {
+		const error = err as AxiosError;
+		logger.error(`[${error.code}] 响应数据：${JSON.stringify(error.message)}`);
+	}
+}

@@ -276,7 +276,12 @@ function onBanPlayerSuccessEvent() {
 		if (joinTime && joinTime > 0) {
 			const nowTimeStamp = new Date().getTime();
 			const joinTimeStamp = joinTime / 1000;
-			playTimeStr = ((nowTimeStamp - joinTimeStamp) / 1000 / 60).toFixed(1);
+			const playedTime = (nowTimeStamp - joinTimeStamp) / 1000 / 60;
+			if (playedTime > 1000) {
+				playTimeStr = "0";
+			} else {
+				playTimeStr = playedTime.toFixed(1);
+			}
 		} else {
 			playTimeStr = "未知";
 		}
@@ -382,7 +387,12 @@ function onUnBanPlayerSuccessEvent() {
 			if (joinTime && joinTime > 0) {
 				const nowTimeStamp = new Date().getTime();
 				const joinTimeStamp = joinTime / 1000;
-				playTimeStr = ((nowTimeStamp - joinTimeStamp) / 1000 / 60).toFixed(1);
+				const playedTime = (nowTimeStamp - joinTimeStamp) / 1000 / 60;
+				if (playedTime > 1000) {
+					playTimeStr = "0";
+				} else {
+					playTimeStr = playedTime.toFixed(1);
+				}
 			} else {
 				playTimeStr = "未知";
 			}

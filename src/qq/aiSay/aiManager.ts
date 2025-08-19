@@ -1,5 +1,9 @@
+import path from "path";
 import { aiAxios } from "../../utils/axios";
-import { sendHttpImgToQQGroup, sendMsgToQQGroup, sendMsgToQQGroupWithAI } from "../sendMessage";
+import { sendHttpImgToQQGroup, sendMsgToQQGroupWithAI } from "../sendMessage";
+import { SQLiteDB } from "../../utils/sqlite";
+import { sendVoiceToQQGroup } from "../groupService";
+import { readConfigFile } from "../../utils/localFile";
 
 interface groupMsg {
 	name: string;
@@ -15,9 +19,15 @@ interface gptChatMessages {
 	content: chatRecord[];
 }
 
+const url = path.join(process.cwd(), "data", "groupReceiver.db");
+const createIsAITableSql = `CREATE TABLE IF NOT EXISTS groupIsAI (
+	group_id INTEGER PRIMARY KEY,
+	isEnable INTEGER NOT NULL DEFAULT 0
+)`;
+
 /** ai管理器 */
 class AiManager {
-	// 是否开启ai
+	// 是否开启AI功能
 	isEnable: boolean = false;
 
 	// 机器人名称
@@ -35,116 +45,55 @@ class AiManager {
 	// 表情包记录
 	faceUrls: string[] = [];
 
-	constructor(name: string, qq: number) {
+	constructor(name: string, qq: number, isEnable: boolean) {
 		this.name = name;
 		this.qq = qq;
+		this.isEnable = isEnable;
 	}
 
-	/** 定时器 */
-	timer: NodeJS.Timeout | null = null;
-	timerManger() {
-		if (this.timer) {
-			clearInterval(this.timer);
+	/** 群聊概率回复消息 */
+	async sendGroupMessage(group_id: number) {
+		if (!this.isEnable) {
+			return;
 		}
-		this.timer = setInterval(() => {
-			if (this.isEnable) {
-				this.sendGroupMessage();
-			}
-		}, 1000 * 60);
-	}
+		// 40%发送图片
+		const random = Math.random();
+		if (random < 0.4) {
+			await this.sendImg(group_id);
+			return;
+		}
 
-	/** 群聊冷清时发送消息 */
-	async sendGroupMessage() {
-		// 是否应该发送消息
-		const groups = Object.keys(this.groupChatRecord);
-		for (const group of groups) {
-			const group_id = parseInt(group);
-			if (!this.groupChatRecord[group_id]) {
-				continue;
-			}
-			if (this.groupChatRecord[group_id].length === 0) {
-				continue;
-			}
-			// 如果在晚上12点到早上10点之间，不发送消息
-			const hour = new Date().getHours();
-			if (hour < 10) {
-				continue;
-			}
-			// 最后一条消息时间
-			const lastMessage = this.groupChatRecord[group_id][this.groupChatRecord[group_id].length - 1];
-			const now = new Date().getTime();
-			const timeDiff = now - lastMessage.time;
-			// 如果距离上一条消息时间超过1小时, 100%发送消息, 超过30分钟, 60%发送消息
-			// 超过20分钟, 40%发送消息, 超过10分钟, 20%发送消息, 超过5分钟, 5%发送消息
-			let isSay = false;
-			if (timeDiff > 1000 * 60 * 60) {
-				isSay = true;
-			} else if (timeDiff > 1000 * 60 * 45) {
-				const random = Math.random();
-				if (random < 0.8) {
-					isSay = true;
-				}
-			} else if (timeDiff > 1000 * 60 * 30) {
-				const random = Math.random();
-				if (random < 0.6) {
-					isSay = true;
-				}
-			} else if (timeDiff > 1000 * 60 * 20) {
-				const random = Math.random();
-				if (random < 0.5) {
-					isSay = true;
-				}
-			} else if (timeDiff > 1000 * 60 * 15) {
-				const random = Math.random();
-				if (random < 0.4) {
-					isSay = true;
-				}
-			} else if (timeDiff > 1000 * 60 * 10) {
-				const random = Math.random();
-				if (random < 0.3) {
-					isSay = true;
-				}
-			} else if (timeDiff > 1000 * 60 * 5) {
-				const random = Math.random();
-				if (random < 0.2) {
-					isSay = true;
-				}
-			}
-			if (isSay) {
-				// 40%发送图片
-				const random = Math.random();
-				if (random < 0.4) {
-					await this.sendImg(group_id);
-					return;
-				}
-
-				let content: gptChatMessages[] = [
+		let content: gptChatMessages[] = [
+			{
+				role: "system",
+				content: [
 					{
-						role: "system",
-						content: [
-							{
-								type: "text",
-								text: `任何有关政治内容,统一回复:不知道。任何有关政治内容,统一回复:不知道。你是${this.name},你的性格是非常幽默的，请多用网络用语言，因为是多人聊天，要回应群友的消息,直接回复即可,融入其中,不要让人看出你是机器人。不允许复制粘贴我的消息。如果群友问了无厘头的问题,你就从异想天开的方向回答问题;如果没有逻辑,就针对一个点进行分析,不要一味的套用别人的观点。不要出现麦克阿瑟说:这样的第三人称,直接回复。必须确保是完整的句子。15个字以内的回复,不要超过15个字。`
-							}
-						]
+						type: "text",
+						text: `任何有关政治内容,统一回复:不知道。任何有关政治内容,统一回复:不知道。你是${this.name},你的性格是非常幽默的，请多用网络用语言，因为是多人聊天，要回应群友的消息,直接回复即可,融入其中,不要让人看出你是机器人。不允许复制粘贴我的消息。如果群友问了无厘头的问题,你就从异想天开的方向回答问题;如果没有逻辑,就针对一个点进行分析,不要一味的套用别人的观点。不要出现麦克阿瑟说:这样的第三人称,直接回复。必须确保是完整的句子。15个字以内的回复,不要超过15个字。`
 					}
-				];
-				for (let i = 0; i < this.groupChatRecord[group_id].length; i++) {
-					const message = this.groupChatRecord[group_id][i];
-					content.push({
-						role: "user",
-						content: [
-							{
-								type: "text",
-								text: `群友: ${message.name}的发言:` + message.text
-							}
-						]
-					});
-				}
-				const message = await this.aiGroupReply(content);
-				sendMsgToQQGroupWithAI(group_id, message);
+				]
 			}
+		];
+		for (let i = 0; i < this.groupChatRecord[group_id].length; i++) {
+			const message = this.groupChatRecord[group_id][i];
+			content.push({
+				role: "user",
+				content: [
+					{
+						type: "text",
+						text: `群友: ${message.name}的发言:` + message.text
+					}
+				]
+			});
 		}
+		const message = await this.aiGroupReply(content);
+
+		// 10%发送语音
+		if (random < 0.5) {
+			await sendVoiceToQQGroup(group_id, message);
+			return;
+		}
+		sendMsgToQQGroupWithAI(group_id, message);
 	}
 
 	/** 接收群聊消息 */
@@ -163,6 +112,11 @@ class AiManager {
 				text: message,
 				time: new Date().getTime()
 			});
+			// 概率10%回复消息
+			const random = Math.random();
+			if (random < 0.1) {
+				this.sendGroupMessage(group_id);
+			}
 		}
 		if (message.includes(this.qq.toString()) || message.includes(this.name)) {
 			const message = await this.reply(group_id);
@@ -171,11 +125,16 @@ class AiManager {
 	}
 
 	/** 更新表情包 */
-	async updateFaceUrls(faceUrl: string) {
+	async updateFaceUrls(faceUrl: string, group_id: number) {
 		if (this.faceUrls.length >= this.maxFaceCount) {
 			this.faceUrls.shift();
 		}
 		this.faceUrls.push(faceUrl);
+		// 20%发送图片
+		const random = Math.random();
+		if (random < 0.2) {
+			this.sendImg(group_id);
+		}
 	}
 
 	/** ai回复消息 */
@@ -215,6 +174,9 @@ class AiManager {
 
 	/** 主动回复 */
 	async reply(group_id: number): Promise<string> {
+		if (!this.isEnable) {
+			return "AI功能未开启\nai=1 开启AI功能";
+		}
 		const messages = this.groupChatRecord[group_id];
 		let content: gptChatMessages[] = [
 			{
@@ -245,6 +207,9 @@ class AiManager {
 
 	/** 发送图片 */
 	async sendImg(group_id: number): Promise<void> {
+		if (!this.isEnable) {
+			return;
+		}
 		// 随机选择表情包
 		const random = Math.floor(Math.random() * this.faceUrls.length);
 		const imgUrl = this.faceUrls[random];
@@ -253,31 +218,53 @@ class AiManager {
 	}
 }
 
-export let aiManager: AiManager | null = null;
+export let aiManagers: { [group_id: number]: AiManager } = {};
+
 /** 初始化ai管理器 */
-export function initAiManager(name: string, qq: number) {
-	aiManager = new AiManager(name, qq);
+export async function initAiManager(group_id: number, name: string, qq: number) {
+	// 读取数据库
+	let isEnable = false;
+	const db = new SQLiteDB(url, createIsAITableSql);
+	await db.open();
+	const sql = `SELECT isEnable FROM groupIsAI WHERE group_id = ?`;
+	const res = await db.query(sql, [group_id]);
+	if (res.length > 0) {
+		isEnable = res[0].isEnable;
+	} else {
+		isEnable = false;
+	}
+	await db.close();
+	// 创建ai管理器
+	const aiManager = new AiManager(name, qq, isEnable);
+	aiManagers[group_id] = aiManager;
 }
+
 /** 更新ai管理器 */
 export function updateAiManager(group_id: number, message: string, name: string) {
-	if (aiManager) {
-		aiManager.receiveGroupMessage(group_id, message, name);
-	}
-}
-/** 更新表情包 */
-export function updateFaceUrls(faceUrl: string) {
-	if (aiManager) {
-		aiManager.updateFaceUrls(faceUrl);
-	}
-}
-export function setEnable(isEnable: boolean) {
-	if (aiManager) {
-		aiManager.isEnable = isEnable;
+	if (aiManagers[group_id]) {
+		aiManagers[group_id].receiveGroupMessage(group_id, message, name);
 	}
 }
 
-// 对话模型名称
-const sayModel: string = "Qwen/Qwen2.5-7B-Instruct";
+/** 更新表情包 */
+export function updateFaceUrls(faceUrl: string, group_id: number) {
+	if (aiManagers[group_id]) {
+		aiManagers[group_id].updateFaceUrls(faceUrl, group_id);
+	}
+}
+
+/** 设置是否开启ai功能 */
+export async function setEnable(group_id: number, isEnable: boolean) {
+	const db = new SQLiteDB(url, createIsAITableSql);
+	await db.open();
+	await db.execute(`INSERT OR REPLACE INTO groupIsAI (group_id, isEnable) VALUES (?,?)`, [group_id, isEnable ? 1 : 0]);
+	await db.close();
+	// 更新ai管理器
+	if (aiManagers[group_id]) {
+		aiManagers[group_id].isEnable = isEnable;
+	}
+}
+
 // 画图模型名称
 const drawModel: string = "black-forest-labs/FLUX.1-schnell";
 
@@ -286,7 +273,7 @@ function generateOption(content: gptChatMessages[] | string, model: "say" | "dra
 	let option: any = {};
 	if (model === "say") {
 		option = {
-			model: sayModel,
+			model: readConfigFile().ai_model,
 			messages: content as gptChatMessages[],
 			stream: false,
 			max_tokens: 100,
