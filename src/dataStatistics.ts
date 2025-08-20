@@ -7,6 +7,7 @@ import { SQLiteDB } from "./utils/sqlite";
 import { sendBase64ImgToQQGroup, sendMsgToQQGroup } from "./qq/sendMessage";
 import { htmlToBase64Image } from "./qq/generateBase64Image";
 import express from "express";
+import { Axios, AxiosError } from "axios";
 
 // 连接ws和http状态
 const { ws_ip, status_token, group_name } = readConfigFile();
@@ -201,123 +202,142 @@ function main() {
 
 // 查询服务器和玩家数据
 async function query() {
-	const serverRes = await bfvAxios().get("bfv/servers", {
-		params: {
-			serverName: group_name,
-			timeout: 30000
-		}
-	});
-
-	if (serverRes.status !== 200) {
-		count = startInterval / 2;
-		logger.warn(`服务器查询失败: ${serverRes.status} 重试中...`);
-		return;
-	}
-
-	const server = serverRes.data.data;
-
-	if (!server) {
-		logger.warn(`未查询到服务器: ${group_name}`);
-		isOpening = false;
-		return;
-	}
-	isOpening = true;
-
-	const gameIdStr = server.map((server: any) => server.gameId).join(",");
-
-	const playerRes = await gtAxios().get("bfv/players/", {
-		params: {
-			gameid: gameIdStr,
-			timeout: 30000
-		}
-	});
-
-	if (playerRes.status === 201) {
-		logger.info(`服务器当前无玩家`);
-		return;
-	}
-
-	if (playerRes.status !== 200) {
-		count = startInterval / 2;
-		logger.warn(`服务器玩家列表获取失败: ${playerRes.status} 重试中...`);
-		return;
-	}
-
-	let allPlayers: any[] = [];
-
-	const serverData = playerRes.data;
-	for (let i = 0; i < server.length; i++) {
-		const gameId = server[i].gameId;
-		const team1 = serverData[gameId].teams[0].players;
-		const team2 = serverData[gameId].teams[1].players;
-		// 合并队伍数据
-		allPlayers.push(...team1, ...team2);
-	}
-	let playerPersonaIds: number[] = allPlayers.map((player: any) => player.player_id);
-
-	const leafPlayers = detailDataCache.filter((player: any) => !playerPersonaIds.includes(player.personaId));
-	if (leafPlayers.length > 0) {
-		playerPersonaIds.push(...leafPlayers.map((player: any) => player.personaId));
-	}
-
-	const detailRes = await bfvAxios().post("worker/player/getBatchAllStats", { personaIds: playerPersonaIds, detail: true, timeout: 60000 });
-	const detailData = detailRes.data.data;
-
-	for (let i = 0; i < detailData.length; i++) {
-		const player = detailData[i];
-		const personaId = player.personaId;
-		const isLeafPlayer = leafPlayers.find((player: any) => player.personaId == personaId);
-		const name = isLeafPlayer ? isLeafPlayer.name : allPlayers.find((player: any) => player.player_id == personaId).name;
-
-		const newPlayer: PlayerDetail = {
-			name,
-			personaId,
-			kills: player.kills,
-			deaths: player.deaths,
-			wins: player.wins,
-			loses: player.loses,
-			timePlayed: player.timePlayed,
-			killAssists: player.killAssists,
-			heals: player.heals,
-			revives: player.revives,
-			headshots: player.headshots,
-			totalScore: player.totalScore,
-			weapons: player.weapons.map((weapon: any) => ({
-				name: weapon.name,
-				categories: weapon.categories,
-				kills: weapon.kills,
-				timeEquipped: weapon.timeEquipped
-			})),
-			vehicles: player.vehicles.map((vehicle: any) => ({
-				name: vehicle.name,
-				categories: vehicle.categories,
-				kills: vehicle.kills,
-				timeEquipped: vehicle.timeEquipped
-			})),
-			gadgets: player.gadgets.map((gadget: any) => ({
-				name: gadget.name,
-				categories: gadget.categories,
-				kills: gadget.kills,
-				timeEquipped: gadget.timeEquipped
-			}))
-		};
-
-		const cachePlayer = detailDataCache.find((player: any) => player.personaId == personaId);
-		if (cachePlayer) {
-			const diff = calculateDiff(cachePlayer, newPlayer);
-			if (diff.diffKills != 0) {
-				logger.debug(formatDiffMessage(name, personaId, diff));
-				await saveData(name, personaId, diff);
-				if (isLeafPlayer) {
-					detailDataCache = detailDataCache.filter((player: any) => player.personaId != personaId);
-				} else {
-					const index = detailDataCache.findIndex((player: any) => player.personaId == personaId);
-					detailDataCache[index] = newPlayer;
-				}
+	try {
+		const serverRes = await bfvAxios().get("bfv/servers", {
+			params: {
+				serverName: group_name,
+				timeout: 30000
 			}
+		});
+
+		if (serverRes.status !== 200) {
+			count = startInterval / 2;
+			logger.warn(`服务器查询失败: ${serverRes.status} 重试中...`);
+			return;
+		}
+
+		const server = serverRes.data.data;
+
+		if (!server) {
+			logger.warn(`未查询到服务器: ${group_name}`);
+			isOpening = false;
+			return;
+		}
+		isOpening = true;
+
+		const gameIdStr = server.map((server: any) => server.gameId).join(",");
+
+		const playerRes = await gtAxios().get("bfv/players/", {
+			params: {
+				gameid: gameIdStr,
+				timeout: 30000
+			}
+		});
+
+		if (playerRes.status === 201) {
+			logger.info(`服务器当前无玩家`);
+			return;
+		}
+
+		if (playerRes.status !== 200) {
+			count = startInterval / 2;
+			logger.warn(`服务器玩家列表获取失败: ${playerRes.status} 重试中...`);
+			return;
+		}
+
+		let allPlayers: any[] = [];
+
+		const serverData = playerRes.data;
+
+		for (let i = 0; i < server.length; i++) {
+			const gameId = server[i].gameId;
+			if (!serverData[gameId].teams) {
+				continue;
+			}
+			const team1 = serverData[gameId].teams[0].players;
+			const team2 = serverData[gameId].teams[1].players;
+			// 合并队伍数据
+			allPlayers.push(...team1, ...team2);
+		}
+
+		if (allPlayers.length === 0) {
+			logger.info(`服务器当前无玩家`);
+			return;
+		}
+		let playerPersonaIds: number[] = allPlayers.map((player: any) => player.player_id);
+
+		const leafPlayers = detailDataCache.filter((player: any) => !playerPersonaIds.includes(player.personaId));
+		if (leafPlayers.length > 0) {
+			playerPersonaIds.push(...leafPlayers.map((player: any) => player.personaId));
+		}
+
+		const detailRes = await bfvAxios().post("worker/player/getBatchAllStats", { personaIds: playerPersonaIds, detail: true, timeout: 60000 });
+		const detailData = detailRes.data.data;
+
+		for (let i = 0; i < detailData.length; i++) {
+			const player = detailData[i];
+			const personaId = player.personaId;
+			const isLeafPlayer = leafPlayers.find((player: any) => player.personaId == personaId);
+			const name = isLeafPlayer ? isLeafPlayer.name : allPlayers.find((player: any) => player.player_id == personaId).name;
+
+			const newPlayer: PlayerDetail = {
+				name,
+				personaId,
+				kills: player.kills,
+				deaths: player.deaths,
+				wins: player.wins,
+				loses: player.loses,
+				timePlayed: player.timePlayed,
+				killAssists: player.killAssists,
+				heals: player.heals,
+				revives: player.revives,
+				headshots: player.headshots,
+				totalScore: player.totalScore,
+				weapons: player.weapons.map((weapon: any) => ({
+					name: weapon.name,
+					categories: weapon.categories,
+					kills: weapon.kills,
+					timeEquipped: weapon.timeEquipped
+				})),
+				vehicles: player.vehicles.map((vehicle: any) => ({
+					name: vehicle.name,
+					categories: vehicle.categories,
+					kills: vehicle.kills,
+					timeEquipped: vehicle.timeEquipped
+				})),
+				gadgets: player.gadgets.map((gadget: any) => ({
+					name: gadget.name,
+					categories: gadget.categories,
+					kills: gadget.kills,
+					timeEquipped: gadget.timeEquipped
+				}))
+			};
+
+			const cachePlayer = detailDataCache.find((player: any) => player.personaId == personaId);
+			if (cachePlayer) {
+				const diff = calculateDiff(cachePlayer, newPlayer);
+				if (diff.diffKills != 0) {
+					logger.debug(formatDiffMessage(name, personaId, diff));
+					await saveData(name, personaId, diff);
+					if (isLeafPlayer) {
+						detailDataCache = detailDataCache.filter((player: any) => player.personaId != personaId);
+					} else {
+						const index = detailDataCache.findIndex((player: any) => player.personaId == personaId);
+						detailDataCache[index] = newPlayer;
+					}
+				}
+			} else {
+				detailDataCache.push(newPlayer);
+				logger.info(formatNewPlayerMessage(newPlayer));
+			}
+		}
+	} catch (e) {
+		const error = e as AxiosError;
+		const errorData: any = error.response?.data;
+		if (errorData && errorData.errors && errorData.errors[0] === "server not found") {
+			logger.info(`未查询到服务器: ${group_name}`);
 		} else {
-			detailDataCache.push(newPlayer);
-			logger.info(formatNewPlayerMessage(newPlayer));
+			logger.error(`查询服务器${group_name}列表失败: ${error.message}`);
 		}
 	}
 }
@@ -469,7 +489,7 @@ async function queryPlayer(playerName: string): Promise<string> {
 	try {
 		const db = new SQLiteDB(dbPath, createPlayerDetailsTableSql);
 		await db.open();
-		const res = await db.query(`SELECT * FROM playerDetails WHERE name = ? LIMIT 5`, [playerName]);
+		const res = await db.query(`SELECT * FROM playerDetails WHERE name = ? ORDER BY timestamp DESC LIMIT 5`, [playerName]);
 		// 计算胜率
 		const sql = `SELECT COUNT(*) AS wins, COUNT(*) - COUNT(CASE WHEN loses > 0 THEN 1 END) AS loses FROM playerDetails WHERE name = ?`;
 		const params = [playerName];
@@ -928,12 +948,18 @@ async function drawRankList(group_id: number, isMerge: boolean = true): Promise<
 
 	// #endregion
 
+	// 以下为基准时间戳（北京时间2025年8月1日）
+	const baseTimestamp = new Date("2025-08-01T00:00:00+08:00").getTime();
+	// 计算当前赛季(一个赛季两个月)的赛季编号 (北京时间)
+	const currentTimestamp = new Date().getTime();
+	const seasonNumber = Math.floor((currentTimestamp - baseTimestamp) / (1000 * 60 * 60 * 24 * 60)) + 1;
+
 	const htmlKill = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${readConfigFile().group_name} S${((new Date().getTime() - 1755000000) % 5184000000) + 1}赛季排行榜 - 击杀 & 特殊统计</title>
+  <title>${readConfigFile().group_name} S${seasonNumber}赛季排行榜 - 击杀 & 特殊统计</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
   
@@ -1050,7 +1076,7 @@ async function drawRankList(group_id: number, isMerge: boolean = true): Promise<
     <header class="mb-5 text-center">
       <div class="inline-flex items-center justify-center p-3 rounded-2xl bg-dark-light/50 mb-3 border border-gray-700/30">
         <i class="fa fa-trophy text-yellow-500 mr-3 animate-pulse text-xl"></i>
-        <h1 class="text-3xl font-bold text-white">${readConfigFile().group_name} S${((new Date().getTime() - 1755000000) % 5184000000) + 1}赛季排行榜</h1>
+        <h1 class="text-3xl font-bold text-white">${readConfigFile().group_name} S${seasonNumber}赛季排行榜</h1>
         <span class="mx-2 text-gray-500">|</span>
         <span class="text-lg font-medium bg-gradient-to-r from-yesterday-accent to-today-accent text-transparent bg-clip-text">击杀 & 特殊统计</span>
         <i class="fa fa-trophy text-yellow-500 ml-3 animate-pulse text-xl"></i>
@@ -1240,7 +1266,7 @@ async function drawRankList(group_id: number, isMerge: boolean = true): Promise<
                     <span>补刀手</span>
                   </div>
                   <div class="font-medium text-yesterday-accent/90">
-                    ${yesterdayAssists ? `${yesterdayAssists.name} <span class="text-white">(${yesterdayAssists.assists}次)</span>` : "暂无数据"}
+                    ${yesterdayAssists ? `${yesterdayAssists.name} <span class="text-white">(${yesterdayAssists.assists}助攻)</span>` : "暂无数据"}
                   </div>
                 </div>
                 
@@ -1250,7 +1276,7 @@ async function drawRankList(group_id: number, isMerge: boolean = true): Promise<
                     <span>正中红心</span>
                   </div>
                   <div class="font-medium text-yesterday-accent/90">
-                    ${yesterdayHeadshots ? `${yesterdayHeadshots.name} <span class="text-white">(${yesterdayHeadshots.headshots}次)</span>` : "暂无数据"}
+                    ${yesterdayHeadshots ? `${yesterdayHeadshots.name} <span class="text-white">(${yesterdayHeadshots.headshots}爆头)</span>` : "暂无数据"}
                   </div>
                 </div>
                 
@@ -1345,7 +1371,7 @@ async function drawRankList(group_id: number, isMerge: boolean = true): Promise<
                     <span>补刀手</span>
                   </div>
                   <div class="font-medium text-today-accent/90">
-                    ${todayMostAssists ? `${todayMostAssists.name} <span class="text-white">(${todayMostAssists.assists}次)</span>` : "暂无数据"}
+                    ${todayMostAssists ? `${todayMostAssists.name} <span class="text-white">(${todayMostAssists.assists}助攻)</span>` : "暂无数据"}
                   </div>
                 </div>
                 
@@ -1355,7 +1381,7 @@ async function drawRankList(group_id: number, isMerge: boolean = true): Promise<
                     <span>正中红心</span>
                   </div>
                   <div class="font-medium text-today-accent/90">
-                    ${todayMostHeadshots ? `${todayMostHeadshots.name} <span class="text-white">(${todayMostHeadshots.headshots}次)</span>` : "暂无数据"}
+                    ${todayMostHeadshots ? `${todayMostHeadshots.name} <span class="text-white">(${todayMostHeadshots.headshots}爆头)</span>` : "暂无数据"}
                   </div>
                 </div>
                 
@@ -1379,7 +1405,7 @@ async function drawRankList(group_id: number, isMerge: boolean = true): Promise<
     <footer class="mt-5 text-center text-gray-custom text-xs py-3 border-t border-gray-700/30">
       <div class="flex flex-col sm:flex-row justify-center items-center gap-2">
         <i class="fa fa-gamepad text-yesterday-accent"></i>
-        <p>${readConfigFile().group_name} S${((new Date().getTime() - 1755000000) % 5184000000) + 1}赛季排行榜 - 击杀 & 特殊统计 &copy; ${new Date().getFullYear()}</p>
+        <p>${readConfigFile().group_name} S${seasonNumber}赛季排行榜 - 击杀 & 特殊统计 &copy; ${new Date().getFullYear()}</p>
         <span class="hidden sm:inline">|</span>
         <p>数据统计周期: 每日00:00-24:00</p>
         <i class="fa fa-gamepad text-today-accent"></i>
@@ -1394,7 +1420,7 @@ async function drawRankList(group_id: number, isMerge: boolean = true): Promise<
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${readConfigFile().group_name} S${((new Date().getTime() - 1755000000) % 5184000000) + 1}赛季排行榜 - KD & KPM</title>
+  <title>${readConfigFile().group_name} S${seasonNumber}赛季排行榜 - KD & KPM</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
   
@@ -1520,7 +1546,7 @@ async function drawRankList(group_id: number, isMerge: boolean = true): Promise<
     <header class="mb-5 text-center">
       <div class="inline-flex items-center justify-center p-3 rounded-2xl bg-dark-light/50 mb-3 border border-gray-700/30">
         <i class="fa fa-trophy text-yellow-500 mr-3 animate-pulse text-xl"></i>
-        <h1 class="text-3xl font-bold text-white">${readConfigFile().group_name} S${((new Date().getTime() - 1755000000) % 5184000000) + 1}赛季排行榜</h1>
+        <h1 class="text-3xl font-bold text-white">${readConfigFile().group_name} S${seasonNumber}赛季排行榜</h1>
         <span class="mx-2 text-gray-500">|</span>
         <span class="text-lg font-medium bg-gradient-to-r from-yesterday-accent to-today-accent text-transparent bg-clip-text">KD & KPM</span>
         <i class="fa fa-trophy text-yellow-500 ml-3 animate-pulse text-xl"></i>
@@ -1837,48 +1863,13 @@ async function drawRankList(group_id: number, isMerge: boolean = true): Promise<
     <footer class="mt-5 text-center text-gray-custom text-xs py-3 border-t border-gray-700/30">
       <div class="flex flex-col sm:flex-row justify-center items-center gap-2">
         <i class="fa fa-gamepad text-yesterday-accent"></i>
-        <p>${readConfigFile().group_name} S${((new Date().getTime() - 1755000000) % 5184000000) + 1}赛季排行榜 - KD & KPM &copy; ${new Date().getFullYear()}</p>
+        <p>${readConfigFile().group_name} S${seasonNumber}赛季排行榜 - KD & KPM &copy; ${new Date().getFullYear()}</p>
         <span class="hidden sm:inline">|</span>
         <p>数据统计周期: 每日00:00-24:00</p>
         <i class="fa fa-gamepad text-today-accent"></i>
       </div>
     </footer>
   </div>
-  
-  <!-- 数字动画脚本 -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      // 为数字添加增长动画
-      const animateValues = (selector, colorClass) => {
-        document.querySelectorAll(selector).forEach(element => {
-          const text = element.textContent;
-          const number = parseFloat(text.match(/\d+\.?\d*/)[0]);
-          if (!isNaN(number) && text !== "暂无数据") {
-            let current = 0;
-            const duration = 1500;
-            const step = number / (duration / 16);
-            
-            const update = () => {
-              current += step;
-              if (current >= number) {
-                element.textContent = text;
-                return;
-              }
-              element.textContent = text.replace(/\d+\.?\d*/, 
-                number % 1 === 0 ? Math.floor(current) : current.toFixed(1));
-              requestAnimationFrame(update);
-            };
-            
-            update();
-          }
-        });
-      };
-      
-      // 分别为昨日和今日数据添加动画
-      animateValues('.section-card-yesterday .font-medium', 'text-yesterday-accent');
-      animateValues('.section-card-today .font-medium', 'text-today-accent');
-    });
-  </script>
 </body>
 </html>`;
 
@@ -1887,7 +1878,7 @@ async function drawRankList(group_id: number, isMerge: boolean = true): Promise<
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${readConfigFile().group_name} S${((new Date().getTime() - 1755000000) % 5184000000) + 1}赛季武器载具配备数据</title>
+  <title>${readConfigFile().group_name} S${seasonNumber}赛季武器载具配备数据</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
   
@@ -1995,7 +1986,7 @@ async function drawRankList(group_id: number, isMerge: boolean = true): Promise<
     <header class="mb-5 text-center">
       <div class="inline-flex items-center justify-center p-3 rounded-2xl bg-dark-light/50 mb-3 border border-gray-700/30">
         <i class="fa fa-bomb text-weapon-accent mr-3 animate-pulse text-xl"></i>
-        <h1 class="text-3xl font-bold text-white">${readConfigFile().group_name} S${((new Date().getTime() - 1755000000) % 5184000000) + 1}赛季武器载具数据</h1>
+        <h1 class="text-3xl font-bold text-white">${readConfigFile().group_name} S${seasonNumber}赛季武器载具数据</h1>
         <i class="fa fa-truck text-vehicle-accent ml-3 animate-pulse text-xl"></i>
       </div>
       <p class="text-gray-custom text-sm flex items-center justify-center">
@@ -2020,14 +2011,13 @@ async function drawRankList(group_id: number, isMerge: boolean = true): Promise<
               <div class="text-weapon-accent/80 text-xs mb-1 flex items-center">
                 <i class="fa fa-crosshairs mr-1"></i>总击杀
               </div>
-              <div class="text-white font-medium flex items-center">
-                <i class="fa fa-gun mr-1 text-weapon-accent"></i>
-                <span class="text-base">${weaponData.reduce((acc, item) => acc + item.kills, 0)}</span>
-              </div>
             </div>
             <div class="badge bg-weapon-accent/20 text-weapon-accent">
               <i class="fa fa-bolt mr-1"></i>武器
             </div>
+          </div>
+          <div class="text-2xl font-bold text-white mt-1 flex items-center">
+            <span class="text-base">${weaponData.reduce((acc, item) => acc + item.kills, 0)}</span>
           </div>
         </div>
         
@@ -2037,14 +2027,13 @@ async function drawRankList(group_id: number, isMerge: boolean = true): Promise<
               <div class="text-vehicle-accent/80 text-xs mb-1 flex items-center">
                 <i class="fa fa-truck mr-1"></i>总击杀
               </div>
-              <div class="text-white font-medium flex items-center">
-                <i class="fa fa-tank mr-1 text-vehicle-accent"></i>
-                <span class="text-base">${vehicleData.reduce((acc, item) => acc + item.kills, 0)}</span>
-              </div>
             </div>
             <div class="badge bg-vehicle-accent/20 text-vehicle-accent">
               <i class="fa fa-bolt mr-1"></i>载具
             </div>
+          </div>
+          <div class="text-2xl font-bold text-white mt-1 flex items-center">
+            <span class="text-base">${vehicleData.reduce((acc, item) => acc + item.kills, 0)}</span>
           </div>
         </div>
         
@@ -2271,7 +2260,7 @@ async function drawRankList(group_id: number, isMerge: boolean = true): Promise<
     <footer class="mt-5 text-center text-gray-custom text-xs py-3 border-t border-gray-700/30">
       <div class="flex flex-col sm:flex-row justify-center items-center gap-2">
         <i class="fa fa-gamepad text-weapon-accent"></i>
-        <p>${readConfigFile().group_name} S${((new Date().getTime() - 1755000000) % 5184000000) + 1}赛季武器载具数据 &copy; ${new Date().getFullYear()}</p>
+        <p>${readConfigFile().group_name} S${seasonNumber}赛季武器载具数据 &copy; ${new Date().getFullYear()}</p>
         <span class="hidden sm:inline">|</span>
         <p>数据统计周期: 每日20:00-24:00</p>
         <i class="fa fa-gamepad text-vehicle-accent"></i>
