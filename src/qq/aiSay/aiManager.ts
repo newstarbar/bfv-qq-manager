@@ -118,6 +118,7 @@ class AiManager {
 				this.sendGroupMessage(group_id);
 			}
 		}
+
 		if (message.includes(this.qq.toString()) || message.includes(this.name)) {
 			const message = await this.reply(group_id);
 			sendMsgToQQGroupWithAI(group_id, message);

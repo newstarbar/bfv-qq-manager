@@ -303,7 +303,7 @@ function onBanPlayerSuccessEvent() {
 /** 屏蔽玩家失败-> 未找到玩家所在的服务器 消息接收事件 */
 function onBanPlayerNotFoundEvent() {
 	kickFailCount++;
-	if (kickFailCount > 2) {
+	if (kickFailCount > 1) {
 		if (banPlayerTemp.isReport) {
 			const group_id = banPlayerTemp.config?.group_id;
 			let serverName = banPlayerTemp.config?.zh_name;

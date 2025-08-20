@@ -93,7 +93,7 @@ export async function playerStatusInBfban(personaId: number): Promise<{ isNormal
 			case 8:
 				return { isNormal: true, content: "刷枪" };
 			default:
-				return { isNormal: true, content: "未知状态" };
+				return { isNormal: true, content: "状态正常" };
 		}
 	} catch (e) {
 		const err = e as AxiosError;

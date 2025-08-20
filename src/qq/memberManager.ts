@@ -83,7 +83,7 @@ export async function getAllMemberInfo(group_id: number): Promise<any[]> {
 export async function getAdminMemberInfo(group_id: number, admin_level: number): Promise<any[]> {
 	const db = new SQLiteDB(url, createTableSql);
 	await db.open();
-	const sql = `SELECT * FROM groupMember WHERE group_id = ? AND admin_level >= ? ORDER BY join_time ASC`;
+	const sql = `SELECT * FROM groupMember WHERE group_id = ? AND admin_level >= ? ORDER BY admin_level DESC, join_time ASC`;
 	const result = await db.query(sql, [group_id, admin_level]);
 	await db.close();
 	return result;

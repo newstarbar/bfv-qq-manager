@@ -5,7 +5,7 @@ import { sendMsgToQQGroup } from "../../qq/sendMessage";
 import { statusAxios } from "../../utils/axios";
 import { readConfigFile } from "../../utils/localFile";
 import logger from "../../utils/logger";
-import { addTempBlackList } from "../ban/backListManager";
+import { addTempBlackList, isTempBlackList } from "../ban/backListManager";
 import { kickPlayer } from "./checkPlayer";
 
 interface Settlement {
@@ -93,6 +93,12 @@ async function isOverkill(settlement: Settlement, playerKills: number) {
 	const isGroup = await isGroupMember(serverConfig.group_id, player.name);
 	if (isGroup) {
 		if (playerKills > serverConfig.kill) {
+			// 是否已经在临时黑名单中
+			const isTempBlack = await isTempBlackList(player.personaId);
+			if (isTempBlack) {
+				return;
+			}
+
 			sendMsgToQQGroup(
 				serverConfig.group_id,
 				`${serverConfig.zh_name}\n群友[${player.name}]超杀\n击杀数: ${playerKills} > ${serverConfig.kill}\n已自动加入临时黑名单\n暖服期间进服自动解除`,
@@ -103,6 +109,12 @@ async function isOverkill(settlement: Settlement, playerKills: number) {
 		}
 	} else {
 		if (playerKills > serverConfig.nokill) {
+			// 是否已经在临时黑名单中
+			const isTempBlack = await isTempBlackList(player.personaId);
+			if (isTempBlack) {
+				return;
+			}
+
 			sendMsgToQQGroup(
 				serverConfig.group_id,
 				`${serverConfig.zh_name}\n路人[${player.name}]超杀\n击杀数: ${playerKills} > ${serverConfig.nokill}\n已自动加入临时黑名单\n暖服期间进服自动解除`,

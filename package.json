@@ -11,7 +11,7 @@
 		"update": "tsc && cmd /c build_steps.bat",
 		"clean": "rimraf dist",
 		"test": "tsc && node dist/dataStatistics.js",
-		"bomb": "tsc && ncc build dist/others/bombScanManager.js -o dist/bomb && pkg dist/bomb/index.js -t linux -o bombScanManager.sh --public",
+		"bomb": "tsc && ncc build dist/others/dataStatistics.js -o dist/bomb && pkg dist/bomb/index.js -t linux -o bombScanManager.sh --public",
 		"comp": "tsc && ncc build dist/others/competitionSystem.js -o dist/comp && pkg dist/comp/index.js -t linux -o competitionSystem.sh --public",
 		"detail": "tsc && ncc build dist/dataStatistics.js -o dist/detail && pkg dist/detail/index.js -t win -o data-statistics-win.exe --public && pkg dist/detail/index.js -t linux -o data-statistics-linux.sh --public"
 	},

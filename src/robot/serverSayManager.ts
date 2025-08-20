@@ -88,10 +88,11 @@ export async function serverSayManager(): Promise<void> {
 		})
 		.catch((e) => {
 			const err = e as AxiosError;
-			const error = err.response?.data as any;
+			// 先判断 err.response 是否存在，再决定如何取 data
+			const error: any = err.response ? err.response.data : err;
 			logger.error(`播报消息失败：${playerName} ${JSON.stringify(error)}`);
-			if (error.message === "无效的Cookie") {
-				// 移除无效的cookie
+			// 增加对 error 存在且有 message 字段的判断，避免 undefined 读取
+			if (error && error.message === "无效的Cookie") {
 				expireCookie(playerName);
 			}
 		});

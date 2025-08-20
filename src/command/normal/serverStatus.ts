@@ -86,9 +86,9 @@ function generateServerStatus(serverStatus: ServerStatus, groupMember: GroupPlay
 	const currentTimeStr = `${Math.floor((currentTime / 60 / 1000) % 60)}分钟`;
 
 	const resultContent = `[${warmStatusStr}]     对局: ${currentTimeStr}\n${serverName}\n人数: ${
-		serverPlayers ? serverPlayers.players.soldier.length : 0
+		serverPlayers ? serverPlayers.players.soldier.length + botNumber : 0
 	}[${team1}|${team2}]/64 [${queue}]  观战: ${spectator}\n地图: ${mapName}[${mapMode}]\n群友: ${groupMemberCount}    真人: ${
-		serverPlayers ? serverPlayers.players.soldier.length - botNumber : 0
+		serverPlayers ? serverPlayers.players.soldier.length : 0
 	}    bot: ${botNumber}\n监服: ${monitorsStr}\n======================\n`;
 
 	return resultContent;

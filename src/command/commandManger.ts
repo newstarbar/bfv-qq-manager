@@ -333,6 +333,9 @@ class CommandManager {
 				}
 			} else {
 				// ai模块更新
+				if (e.user_id == 2854211804 || e.user_id == 3889013937) {
+					return;
+				}
 				updateAiManager(e.group_id, e.raw_message, e.nick_name);
 			}
 		}

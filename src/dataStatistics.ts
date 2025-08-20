@@ -10,10 +10,10 @@ import express from "express";
 import { Axios, AxiosError } from "axios";
 
 // 连接ws和http状态
-const { ws_ip, status_token, group_name } = readConfigFile();
+const { ws_ip, ws_token, status_token, group_name } = readConfigFile();
 const ws: WebSocket = new WebSocket(`ws://${ws_ip}/`, {
 	headers: {
-		Authorization: `Bearer ${status_token}`
+		Authorization: `Bearer ${ws_token}`
 	}
 });
 
@@ -251,7 +251,7 @@ async function query() {
 
 		for (let i = 0; i < server.length; i++) {
 			const gameId = server[i].gameId;
-			if (!serverData[gameId].teams) {
+			if (!serverData[gameId] || !serverData[gameId].teams) {
 				continue;
 			}
 			const team1 = serverData[gameId].teams[0].players;
@@ -273,6 +273,12 @@ async function query() {
 
 		const detailRes = await bfvAxios().post("worker/player/getBatchAllStats", { personaIds: playerPersonaIds, detail: true, timeout: 60000 });
 		const detailData = detailRes.data.data;
+
+		// 新增非空校验
+		if (!detailData) {
+			logger.warn("获取玩家详细数据失败：返回数据为null");
+			return;
+		}
 
 		for (let i = 0; i < detailData.length; i++) {
 			const player = detailData[i];

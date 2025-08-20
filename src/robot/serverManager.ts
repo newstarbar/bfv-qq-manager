@@ -47,8 +47,13 @@ export async function startServerCommand(tag: string, group_id: number, message_
 /** 服务器重启，初始化添加进主循环框架 */
 export async function initServerRestart(): Promise<string> {
 	logger.info("初始化添加进主循环框架");
-	// 重置服务器列表
-	queryServerList = [];
+	// 重置服务器列表（下线所有服务器如果有）
+	if (queryServerList.length > 0) {
+		for (const server of queryServerList) {
+			await removeServerFromMainLoop(server[0]);
+		}
+		queryServerList = [];
+	}
 
 	// 下线所有在线玩家
 	offlineAllOnlineMember();
