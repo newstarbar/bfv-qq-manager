@@ -82,10 +82,6 @@ async function isOverkill(settlement: Settlement, playerKills: number) {
 	if (player.isWarmed) {
 		return;
 	}
-	// DEBUG临时小电视服忽略
-	if (serverConfig.tv) {
-		return;
-	}
 
 	// 是否是管理员
 	const adminList = await getAdminMemberInfo(serverConfig.group_id, 1);
@@ -112,7 +108,7 @@ async function isOverkill(settlement: Settlement, playerKills: number) {
 				`${serverConfig.zh_name}\n路人[${player.name}]超杀\n击杀数: ${playerKills} > ${serverConfig.nokill}\n已自动加入临时黑名单\n暖服期间进服自动解除`,
 				null
 			);
-			addTempBlackList(player.name, player.personaId, "超杀", `路人超杀数${playerKills}大于${serverConfig.nokill}\n已自动加入临时黑名单\n暖服期间进服自动解除`);
+			addTempBlackList(player.name, player.personaId, "超杀", `路人超杀数${playerKills}大于${serverConfig.nokill}`);
 			kickOverKillPlayer(settlement.gameId, serverConfig, player, `路人超杀数${playerKills}大于${serverConfig.nokill}`);
 		}
 	}

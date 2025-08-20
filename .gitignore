@@ -3,11 +3,15 @@ dist
 others
 logs
 chrome
+build
+
 bfv-manager-win.exe
-dataStatistics.exe
 bfv-manager-linux.sh
-bfv-manager.sh
+
+data-statistics-win.exe
+data-statistics-linux.sh
 bombScanManager.sh
 build_steps.bat
+
 *.db
 /config.json

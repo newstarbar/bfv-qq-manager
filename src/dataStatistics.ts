@@ -232,6 +232,11 @@ async function query() {
 		}
 	});
 
+	if (playerRes.status === 201) {
+		logger.info(`服务器当前无玩家`);
+		return;
+	}
+
 	if (playerRes.status !== 200) {
 		count = startInterval / 2;
 		logger.warn(`服务器玩家列表获取失败: ${playerRes.status} 重试中...`);
@@ -928,7 +933,7 @@ async function drawRankList(group_id: number, isMerge: boolean = true): Promise<
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Zygo S1赛季排行榜 - 击杀 & 特殊统计</title>
+  <title>${readConfigFile().group_name} S${((new Date().getTime() - 1755000000) % 5184000000) + 1}赛季排行榜 - 击杀 & 特殊统计</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
   
@@ -1045,7 +1050,7 @@ async function drawRankList(group_id: number, isMerge: boolean = true): Promise<
     <header class="mb-5 text-center">
       <div class="inline-flex items-center justify-center p-3 rounded-2xl bg-dark-light/50 mb-3 border border-gray-700/30">
         <i class="fa fa-trophy text-yellow-500 mr-3 animate-pulse text-xl"></i>
-        <h1 class="text-3xl font-bold text-white">Zygo S1赛季排行榜</h1>
+        <h1 class="text-3xl font-bold text-white">${readConfigFile().group_name} S${((new Date().getTime() - 1755000000) % 5184000000) + 1}赛季排行榜</h1>
         <span class="mx-2 text-gray-500">|</span>
         <span class="text-lg font-medium bg-gradient-to-r from-yesterday-accent to-today-accent text-transparent bg-clip-text">击杀 & 特殊统计</span>
         <i class="fa fa-trophy text-yellow-500 ml-3 animate-pulse text-xl"></i>
@@ -1374,7 +1379,7 @@ async function drawRankList(group_id: number, isMerge: boolean = true): Promise<
     <footer class="mt-5 text-center text-gray-custom text-xs py-3 border-t border-gray-700/30">
       <div class="flex flex-col sm:flex-row justify-center items-center gap-2">
         <i class="fa fa-gamepad text-yesterday-accent"></i>
-        <p>Zygo S1赛季排行榜 - 击杀 & 特殊统计 &copy; ${new Date().getFullYear()}</p>
+        <p>${readConfigFile().group_name} S${((new Date().getTime() - 1755000000) % 5184000000) + 1}赛季排行榜 - 击杀 & 特殊统计 &copy; ${new Date().getFullYear()}</p>
         <span class="hidden sm:inline">|</span>
         <p>数据统计周期: 每日00:00-24:00</p>
         <i class="fa fa-gamepad text-today-accent"></i>
@@ -1389,7 +1394,7 @@ async function drawRankList(group_id: number, isMerge: boolean = true): Promise<
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Zygo S1赛季排行榜 - KD & KPM</title>
+  <title>${readConfigFile().group_name} S${((new Date().getTime() - 1755000000) % 5184000000) + 1}赛季排行榜 - KD & KPM</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
   
@@ -1515,7 +1520,7 @@ async function drawRankList(group_id: number, isMerge: boolean = true): Promise<
     <header class="mb-5 text-center">
       <div class="inline-flex items-center justify-center p-3 rounded-2xl bg-dark-light/50 mb-3 border border-gray-700/30">
         <i class="fa fa-trophy text-yellow-500 mr-3 animate-pulse text-xl"></i>
-        <h1 class="text-3xl font-bold text-white">Zygo S1赛季排行榜</h1>
+        <h1 class="text-3xl font-bold text-white">${readConfigFile().group_name} S${((new Date().getTime() - 1755000000) % 5184000000) + 1}赛季排行榜</h1>
         <span class="mx-2 text-gray-500">|</span>
         <span class="text-lg font-medium bg-gradient-to-r from-yesterday-accent to-today-accent text-transparent bg-clip-text">KD & KPM</span>
         <i class="fa fa-trophy text-yellow-500 ml-3 animate-pulse text-xl"></i>
@@ -1832,7 +1837,7 @@ async function drawRankList(group_id: number, isMerge: boolean = true): Promise<
     <footer class="mt-5 text-center text-gray-custom text-xs py-3 border-t border-gray-700/30">
       <div class="flex flex-col sm:flex-row justify-center items-center gap-2">
         <i class="fa fa-gamepad text-yesterday-accent"></i>
-        <p>Zygo S1赛季排行榜 - KD & KPM &copy; ${new Date().getFullYear()}</p>
+        <p>${readConfigFile().group_name} S${((new Date().getTime() - 1755000000) % 5184000000) + 1}赛季排行榜 - KD & KPM &copy; ${new Date().getFullYear()}</p>
         <span class="hidden sm:inline">|</span>
         <p>数据统计周期: 每日00:00-24:00</p>
         <i class="fa fa-gamepad text-today-accent"></i>
@@ -1882,7 +1887,7 @@ async function drawRankList(group_id: number, isMerge: boolean = true): Promise<
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Zygo S1赛季武器载具配备数据</title>
+  <title>${readConfigFile().group_name} S${((new Date().getTime() - 1755000000) % 5184000000) + 1}赛季武器载具配备数据</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
   
@@ -1990,7 +1995,7 @@ async function drawRankList(group_id: number, isMerge: boolean = true): Promise<
     <header class="mb-5 text-center">
       <div class="inline-flex items-center justify-center p-3 rounded-2xl bg-dark-light/50 mb-3 border border-gray-700/30">
         <i class="fa fa-bomb text-weapon-accent mr-3 animate-pulse text-xl"></i>
-        <h1 class="text-3xl font-bold text-white">Zygo S1赛季武器载具数据</h1>
+        <h1 class="text-3xl font-bold text-white">${readConfigFile().group_name} S${((new Date().getTime() - 1755000000) % 5184000000) + 1}赛季武器载具数据</h1>
         <i class="fa fa-truck text-vehicle-accent ml-3 animate-pulse text-xl"></i>
       </div>
       <p class="text-gray-custom text-sm flex items-center justify-center">
@@ -2266,7 +2271,7 @@ async function drawRankList(group_id: number, isMerge: boolean = true): Promise<
     <footer class="mt-5 text-center text-gray-custom text-xs py-3 border-t border-gray-700/30">
       <div class="flex flex-col sm:flex-row justify-center items-center gap-2">
         <i class="fa fa-gamepad text-weapon-accent"></i>
-        <p>Zygo S1赛季武器载具数据 &copy; ${new Date().getFullYear()}</p>
+        <p>${readConfigFile().group_name} S${((new Date().getTime() - 1755000000) % 5184000000) + 1}赛季武器载具数据 &copy; ${new Date().getFullYear()}</p>
         <span class="hidden sm:inline">|</span>
         <p>数据统计周期: 每日20:00-24:00</p>
         <i class="fa fa-gamepad text-vehicle-accent"></i>
