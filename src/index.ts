@@ -1,7 +1,7 @@
 import { readConfigFile } from "./utils/localFile";
 import logger from "./utils/logger";
 import { WebSocket } from "ws";
-import { checkHttpStatus, sendMsgToQQGroup, sendMsgToQQGroupWithAI } from "./qq/sendMessage";
+import { sendMsgToQQGroup, sendMsgToQQGroupWithAI } from "./qq/sendMessage";
 import { commandManager, getAllInitGroup, isGroupInit } from "./command/commandManger";
 import { initEaManger } from "./robot/eaApiManger";
 import { initServerRestart, startServerLoop } from "./robot/serverManager";
@@ -12,8 +12,10 @@ import { initSayTimer } from "./robot/serverSayManager";
 import { aiManagers, initAiManager } from "./qq/aiSay/aiManager";
 import { initTimeManager } from "./qq/timeManager";
 import { initSettlementTimer } from "./robot/player/settlement";
+import { initAICheckBadWord } from "./qq/aiSay/aiCheckBadWord";
+import { getVersion } from "./utils/version";
 
-logger.info("启动BFV服管QQ机器人, 版本号: 2.0.5");
+getVersion();
 
 // 连接ws和http状态
 const { ws_ip, ws_token, bot_qq, bot_name } = readConfigFile();
@@ -52,6 +54,7 @@ ws.on("message", async (data) => {
 						const allGroups = await getAllInitGroup();
 						for (const group of allGroups) {
 							await initAiManager(group, bot_name, bot_qq);
+							await initAICheckBadWord(group);
 						}
 						// 注册时间模块
 						initTimeManager();

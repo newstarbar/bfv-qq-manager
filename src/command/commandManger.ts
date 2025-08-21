@@ -50,6 +50,7 @@ import { CurfewCommand } from "./admin2/curfew";
 import { SuperCommand } from "./admin2/superCommand";
 import { AllCommunityServer } from "./normal/allCommunityServer";
 import { CXPlayerSayCommand } from "./normal/cxPlayerSay";
+import { aiCheckBadWord } from "../qq/aiSay/aiCheckBadWord";
 
 let commandManagers: CommandManager | null = null;
 let privateCommandManagers: PrivateCommandManager | null = null;
@@ -337,6 +338,12 @@ class CommandManager {
 					return;
 				}
 				updateAiManager(e.group_id, e.raw_message, e.nick_name);
+
+				// 排除群主和管理员
+				if (e.sender.role !== "owner" && e.sender.role !== "admin") {
+					// 检查不当言论
+					aiCheckBadWord(e.group_id, e.user_id, e.message_id, e.raw_message);
+				}
 			}
 		}
 	}

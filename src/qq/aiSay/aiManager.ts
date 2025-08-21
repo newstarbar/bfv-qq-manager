@@ -4,6 +4,7 @@ import { sendHttpImgToQQGroup, sendMsgToQQGroupWithAI } from "../sendMessage";
 import { SQLiteDB } from "../../utils/sqlite";
 import { sendVoiceToQQGroup } from "../groupService";
 import { readConfigFile } from "../../utils/localFile";
+import { initAICheckBadWord } from "./aiCheckBadWord";
 
 interface groupMsg {
 	name: string;
@@ -264,6 +265,8 @@ export async function setEnable(group_id: number, isEnable: boolean) {
 	if (aiManagers[group_id]) {
 		aiManagers[group_id].isEnable = isEnable;
 	}
+	// 更新AI检查不当言论功能
+	initAICheckBadWord(group_id);
 }
 
 // 画图模型名称

@@ -8,6 +8,9 @@ import { sendBase64ImgToQQGroup, sendMsgToQQGroup } from "./qq/sendMessage";
 import { htmlToBase64Image } from "./qq/generateBase64Image";
 import express from "express";
 import { Axios, AxiosError } from "axios";
+import { getVersion } from "./utils/version";
+
+getVersion();
 
 // 连接ws和http状态
 const { ws_ip, ws_token, status_token, group_name } = readConfigFile();
@@ -210,12 +213,6 @@ async function query() {
 			timeout: 30000
 		});
 
-		if (serverRes.status !== 200) {
-			count = startInterval / 2;
-			logger.warn(`服务器查询失败: ${serverRes.status} 重试中...`);
-			return;
-		}
-
 		const server = serverRes.data.data;
 
 		if (!server) {
@@ -227,124 +224,122 @@ async function query() {
 
 		const gameIdStr = server.map((server: any) => server.gameId).join(",");
 
-		const playerRes = await gtAxios().get("bfv/players/", {
-			params: {
-				gameid: gameIdStr,
+		try {
+			const playerRes = await gtAxios().get("bfv/players/", {
+				params: {
+					gameid: gameIdStr
+				},
 				timeout: 30000
+			});
+
+			let allPlayers: any[] = [];
+
+			const serverData = playerRes.data;
+
+			for (let i = 0; i < server.length; i++) {
+				const gameId = server[i].gameId;
+				if (!serverData[gameId] || !serverData[gameId].teams) {
+					continue;
+				}
+				const team1 = serverData[gameId].teams[0].players;
+				const team2 = serverData[gameId].teams[1].players;
+				// 合并队伍数据
+				allPlayers.push(...team1, ...team2);
 			}
-		});
 
-		if (playerRes.status === 201) {
-			logger.info(`服务器当前无玩家`);
-			return;
-		}
-
-		if (playerRes.status !== 200) {
-			count = startInterval / 2;
-			logger.warn(`服务器玩家列表获取失败: ${playerRes.status} 重试中...`);
-			return;
-		}
-
-		let allPlayers: any[] = [];
-
-		const serverData = playerRes.data;
-
-		for (let i = 0; i < server.length; i++) {
-			const gameId = server[i].gameId;
-			if (!serverData[gameId] || !serverData[gameId].teams) {
-				continue;
+			if (allPlayers.length === 0) {
+				return;
 			}
-			const team1 = serverData[gameId].teams[0].players;
-			const team2 = serverData[gameId].teams[1].players;
-			// 合并队伍数据
-			allPlayers.push(...team1, ...team2);
-		}
+			let playerPersonaIds: number[] = allPlayers.map((player: any) => player.player_id);
 
-		if (allPlayers.length === 0) {
-			logger.info(`服务器当前无玩家`);
-			return;
-		}
-		let playerPersonaIds: number[] = allPlayers.map((player: any) => player.player_id);
+			const leafPlayers = detailDataCache.filter((player: any) => !playerPersonaIds.includes(player.personaId));
+			if (leafPlayers.length > 0) {
+				playerPersonaIds.push(...leafPlayers.map((player: any) => player.personaId));
+			}
 
-		const leafPlayers = detailDataCache.filter((player: any) => !playerPersonaIds.includes(player.personaId));
-		if (leafPlayers.length > 0) {
-			playerPersonaIds.push(...leafPlayers.map((player: any) => player.personaId));
-		}
+			try {
+				const detailRes = await bfvAxios().post("worker/player/getBatchAllStats", { personaIds: playerPersonaIds, detail: true, timeout: 60000 });
+				const detailData = detailRes.data.data;
 
-		const detailRes = await bfvAxios().post("worker/player/getBatchAllStats", { personaIds: playerPersonaIds, detail: true, timeout: 60000 });
-		const detailData = detailRes.data.data;
+				for (let i = 0; i < detailData.length; i++) {
+					const player = detailData[i];
+					const personaId = player.personaId;
+					const isLeafPlayer = leafPlayers.find((player: any) => player.personaId == personaId);
+					const name = isLeafPlayer ? isLeafPlayer.name : allPlayers.find((player: any) => player.player_id == personaId).name;
 
-		// 新增非空校验
-		if (!detailData) {
-			logger.warn("获取玩家详细数据失败：返回数据为null");
-			return;
-		}
+					const newPlayer: PlayerDetail = {
+						name,
+						personaId,
+						kills: player.kills,
+						deaths: player.deaths,
+						wins: player.wins,
+						loses: player.loses,
+						timePlayed: player.timePlayed,
+						killAssists: player.killAssists,
+						heals: player.heals,
+						revives: player.revives,
+						headshots: player.headshots,
+						totalScore: player.totalScore,
+						weapons: player.weapons.map((weapon: any) => ({
+							name: weapon.name,
+							categories: weapon.categories,
+							kills: weapon.kills,
+							timeEquipped: weapon.timeEquipped
+						})),
+						vehicles: player.vehicles.map((vehicle: any) => ({
+							name: vehicle.name,
+							categories: vehicle.categories,
+							kills: vehicle.kills,
+							timeEquipped: vehicle.timeEquipped
+						})),
+						gadgets: player.gadgets.map((gadget: any) => ({
+							name: gadget.name,
+							categories: gadget.categories,
+							kills: gadget.kills,
+							timeEquipped: gadget.timeEquipped
+						}))
+					};
 
-		for (let i = 0; i < detailData.length; i++) {
-			const player = detailData[i];
-			const personaId = player.personaId;
-			const isLeafPlayer = leafPlayers.find((player: any) => player.personaId == personaId);
-			const name = isLeafPlayer ? isLeafPlayer.name : allPlayers.find((player: any) => player.player_id == personaId).name;
-
-			const newPlayer: PlayerDetail = {
-				name,
-				personaId,
-				kills: player.kills,
-				deaths: player.deaths,
-				wins: player.wins,
-				loses: player.loses,
-				timePlayed: player.timePlayed,
-				killAssists: player.killAssists,
-				heals: player.heals,
-				revives: player.revives,
-				headshots: player.headshots,
-				totalScore: player.totalScore,
-				weapons: player.weapons.map((weapon: any) => ({
-					name: weapon.name,
-					categories: weapon.categories,
-					kills: weapon.kills,
-					timeEquipped: weapon.timeEquipped
-				})),
-				vehicles: player.vehicles.map((vehicle: any) => ({
-					name: vehicle.name,
-					categories: vehicle.categories,
-					kills: vehicle.kills,
-					timeEquipped: vehicle.timeEquipped
-				})),
-				gadgets: player.gadgets.map((gadget: any) => ({
-					name: gadget.name,
-					categories: gadget.categories,
-					kills: gadget.kills,
-					timeEquipped: gadget.timeEquipped
-				}))
-			};
-
-			const cachePlayer = detailDataCache.find((player: any) => player.personaId == personaId);
-			if (cachePlayer) {
-				const diff = calculateDiff(cachePlayer, newPlayer);
-				if (diff.diffKills != 0) {
-					logger.debug(formatDiffMessage(name, personaId, diff));
-					await saveData(name, personaId, diff);
-					if (isLeafPlayer) {
-						detailDataCache = detailDataCache.filter((player: any) => player.personaId != personaId);
+					const cachePlayer = detailDataCache.find((player: any) => player.personaId == personaId);
+					if (cachePlayer) {
+						const diff = calculateDiff(cachePlayer, newPlayer);
+						if (diff.diffKills != 0) {
+							logger.debug(formatDiffMessage(name, personaId, diff));
+							await saveData(name, personaId, diff);
+							if (isLeafPlayer) {
+								detailDataCache = detailDataCache.filter((player: any) => player.personaId != personaId);
+							} else {
+								const index = detailDataCache.findIndex((player: any) => player.personaId == personaId);
+								detailDataCache[index] = newPlayer;
+							}
+						}
 					} else {
-						const index = detailDataCache.findIndex((player: any) => player.personaId == personaId);
-						detailDataCache[index] = newPlayer;
+						detailDataCache.push(newPlayer);
+						logger.info(formatNewPlayerMessage(newPlayer));
 					}
 				}
+			} catch (e) {
+				const error = e as AxiosError;
+				count = startInterval / 2;
+				logger.warn(`BFV查询服务器玩家详细战绩数据失败: ${error.message}`);
+			}
+		} catch (e) {
+			const error = e as AxiosError;
+			const errorData: any = error.response?.data;
+
+			if (errorData && errorData.errors && errorData.errors[0] === "server not found") {
+				logger.info(`未查询到服务器: ${group_name}`);
+			} else if (error.status === 401) {
+				logger.info(`服务器当前无玩家`);
 			} else {
-				detailDataCache.push(newPlayer);
-				logger.info(formatNewPlayerMessage(newPlayer));
+				count = startInterval / 2;
+				logger.error(`GT查询服务器${group_name}玩家列表失败: ${error.message}`);
 			}
 		}
 	} catch (e) {
 		const error = e as AxiosError;
-		const errorData: any = error.response?.data;
-		if (errorData && errorData.errors && errorData.errors[0] === "server not found") {
-			logger.info(`未查询到服务器: ${group_name}`);
-		} else {
-			logger.error(`查询服务器${group_name}列表失败: ${error.message}`);
-		}
+		count = startInterval / 2;
+		logger.warn(`BFV查询社区服务器列表失败: ${error.message}`);
 	}
 }
 

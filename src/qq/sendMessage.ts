@@ -244,7 +244,7 @@ export async function sendHttpImgToQQGroup(group_id: number, imgUrl: string, mes
 			.then((res) => {
 				const data = res.data;
 				if (data.status === "failed") {
-					logger.error(`发送http图片失败: ${data.message}`);
+					// logger.error(`发送http图片失败: ${data.message}`);
 				}
 			});
 	} catch (err) {
