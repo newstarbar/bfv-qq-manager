@@ -2,13 +2,6 @@ import { qqAxios } from "../utils/axios";
 import logger from "../utils/logger";
 import { AxiosError } from "axios";
 
-// /** 撤回消息 */
-// function recallMsgToQQGroup(message_id: number) {
-//     qqAxios().post('delete_msg', {
-//         "message_id": message_id
-//     })
-// }
-
 /** 获取QQ群成员列表 */
 export async function getQQGroupMemberList(groupId: number): Promise<any> {
 	try {
@@ -214,6 +207,25 @@ export async function sendVoiceToQQGroup(groupId: number, content: string): Prom
 				const data = res.data;
 				if (data.status === "failed") {
 					logger.error(`发送语音失败: ${data.message}`);
+				}
+			});
+	} catch (err) {
+		const error = err as AxiosError;
+		logger.error(`[${error.code}] 响应数据：${JSON.stringify(error.message)}`);
+	}
+}
+
+/** 撤回消息 */
+export async function recallMsgToQQGroup(message_id: number): Promise<void> {
+	try {
+		await qqAxios()
+			.post("delete_msg", {
+				message_id: message_id
+			})
+			.then((res) => {
+				const data = res.data;
+				if (data.status === "failed") {
+					logger.error(`撤回消息失败: ${data.message}`);
 				}
 			});
 	} catch (err) {

@@ -13,6 +13,8 @@ import { aiManagers, initAiManager } from "./qq/aiSay/aiManager";
 import { initTimeManager } from "./qq/timeManager";
 import { initSettlementTimer } from "./robot/player/settlement";
 
+logger.info("启动BFV服管QQ机器人, 版本号: 2.0.5");
+
 // 连接ws和http状态
 const { ws_ip, ws_token, bot_qq, bot_name } = readConfigFile();
 const ws: WebSocket = new WebSocket(`ws://${ws_ip}/`, {
