@@ -259,7 +259,8 @@ async function serverPlayerCheckLoop(queryGameId: number, spectatorCount: number
 		const serverList = await gtAxios().get("bfv/players/", {
 			params: {
 				gameid: gameIdList.join(",")
-			}
+			},
+			timeout: 30000
 		});
 		if (serverList.status !== 200) {
 			return;

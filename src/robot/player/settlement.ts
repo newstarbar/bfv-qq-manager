@@ -63,6 +63,7 @@ async function handleQueue() {
 						continue;
 					}
 					const playerRes = res.data.find((item: any) => item.name == settlement.playerName);
+					// 数据无效，重新加入队列
 					if (!playerRes || now - playerRes.timestamp > validTime) {
 						const newSettlement = { ...settlement, count: settlement.count + 1 };
 						waitQueue.push(newSettlement);
@@ -91,14 +92,15 @@ async function isOverkill(settlement: Settlement, playerKills: number) {
 	}
 	// 是否是群友
 	const isGroup = await isGroupMember(serverConfig.group_id, player.name);
+
+	// 是否已经在临时黑名单中
+	const isTempBlack = await isTempBlackList(player.personaId);
+	if (isTempBlack.length > 0) {
+		return;
+	}
+
 	if (isGroup) {
 		if (playerKills > serverConfig.kill) {
-			// 是否已经在临时黑名单中
-			const isTempBlack = await isTempBlackList(player.personaId);
-			if (isTempBlack) {
-				return;
-			}
-
 			sendMsgToQQGroup(
 				serverConfig.group_id,
 				`${serverConfig.zh_name}\n群友[${player.name}]超杀\n击杀数: ${playerKills} > ${serverConfig.kill}\n已自动加入临时黑名单\n暖服期间进服自动解除`,
@@ -109,12 +111,6 @@ async function isOverkill(settlement: Settlement, playerKills: number) {
 		}
 	} else {
 		if (playerKills > serverConfig.nokill) {
-			// 是否已经在临时黑名单中
-			const isTempBlack = await isTempBlackList(player.personaId);
-			if (isTempBlack) {
-				return;
-			}
-
 			sendMsgToQQGroup(
 				serverConfig.group_id,
 				`${serverConfig.zh_name}\n路人[${player.name}]超杀\n击杀数: ${playerKills} > ${serverConfig.nokill}\n已自动加入临时黑名单\n暖服期间进服自动解除`,
@@ -133,7 +129,6 @@ export function addToQueue(gameId: number, serverConfig: ServerConfig, player: P
 	if (exist) {
 		return;
 	}
-
 	waitQueue.push({ serverConfig, gameId, playerName: player.name, player, count: 1 });
 }
 

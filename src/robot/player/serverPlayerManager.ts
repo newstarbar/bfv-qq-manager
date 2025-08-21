@@ -298,7 +298,7 @@ class ServerPlayerManager implements PlayerManager {
 			}
 		} else {
 			// 是否暖服成功
-			if (newSoldier.length >= 42) {
+			if (newSoldier.length >= 46) {
 				this.isWarm = true;
 
 				// 记录暖服玩家，按着joinTime倒序排序，取前十名

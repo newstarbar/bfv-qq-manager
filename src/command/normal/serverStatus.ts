@@ -83,7 +83,7 @@ function generateServerStatus(serverStatus: ServerStatus, groupMember: GroupPlay
 
 	// 当前对局持续时间
 	const currentTime = new Date().getTime() - serverStatus.currentTime;
-	const currentTimeStr = `${Math.floor((currentTime / 60 / 1000) % 60)}分钟`;
+	const currentTimeStr = `${Math.floor(currentTime / 60 / 1000)}分钟`;
 
 	const resultContent = `[${warmStatusStr}]     对局: ${currentTimeStr}\n${serverName}\n人数: ${
 		serverPlayers ? serverPlayers.players.soldier.length + botNumber : 0

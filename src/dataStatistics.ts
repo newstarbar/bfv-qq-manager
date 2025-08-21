@@ -205,9 +205,9 @@ async function query() {
 	try {
 		const serverRes = await bfvAxios().get("bfv/servers", {
 			params: {
-				serverName: group_name,
-				timeout: 30000
-			}
+				serverName: group_name
+			},
+			timeout: 30000
 		});
 
 		if (serverRes.status !== 200) {

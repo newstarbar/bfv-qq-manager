@@ -125,19 +125,19 @@ function createBFBanInstance(): AxiosInstance {
 // 创建HttpGameTools实例
 let gtBaseURL: string = "https://api.gametools.network/";
 function createGTInstance(): AxiosInstance {
-	// 创建自定义的 https.Agent，设置 maxSockets 来控制连接池的大小
-	const agent = new https.Agent({
-		keepAlive: true,
-		maxSockets: 10 // 设置连接池中最大 socket 数量
-	});
+	// // 创建自定义的 https.Agent，设置 maxSockets 来控制连接池的大小
+	// const agent = new https.Agent({
+	// 	keepAlive: true,
+	// 	maxSockets: 10 // 设置连接池中最大 socket 数量
+	// });
 
 	const instance = axios.create({
 		baseURL: gtBaseURL,
 		headers: {
 			"Content-Type": "application/json"
 		},
-		timeout: 10000,
-		httpsAgent: agent // 使用自定义的 https.Agent
+		timeout: 20000
+		// httpsAgent: agent // 使用自定义的 https.Agent
 	});
 	return instance;
 }
