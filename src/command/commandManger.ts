@@ -337,13 +337,7 @@ class CommandManager {
 				if (e.user_id == 2854211804 || e.user_id == 3889013937) {
 					return;
 				}
-				updateAiManager(e.group_id, e.raw_message, e.nick_name);
-
-				// 排除群主和管理员
-				if (e.sender.role !== "owner" && e.sender.role !== "admin") {
-					// 检查不当言论
-					aiCheckBadWord(e.group_id, e.user_id, e.message_id, e.raw_message);
-				}
+				updateAiManager(e.group_id, e.user_id, e.message_id, e.raw_message, e.nick_name, e.sender.role);
 			}
 		}
 	}

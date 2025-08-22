@@ -12,7 +12,6 @@ import { initSayTimer } from "./robot/serverSayManager";
 import { aiManagers, initAiManager } from "./qq/aiSay/aiManager";
 import { initTimeManager } from "./qq/timeManager";
 import { initSettlementTimer } from "./robot/player/settlement";
-import { initAICheckBadWord } from "./qq/aiSay/aiCheckBadWord";
 import { getVersion } from "./utils/version";
 
 getVersion();
@@ -54,7 +53,6 @@ ws.on("message", async (data) => {
 						const allGroups = await getAllInitGroup();
 						for (const group of allGroups) {
 							await initAiManager(group, bot_name, bot_qq);
-							await initAICheckBadWord(group);
 						}
 						// 注册时间模块
 						initTimeManager();

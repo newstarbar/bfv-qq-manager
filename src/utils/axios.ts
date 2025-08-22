@@ -164,13 +164,20 @@ export function aiAxios(): AxiosInstance {
 }
 function createAIInstance(): AxiosInstance {
 	const config = readConfigFile();
+
+	// 创建自定义的 https.Agent，设置 maxSockets 来控制连接池的大小
+	const agent = new https.Agent({
+		keepAlive: true,
+		maxSockets: 10 // 设置连接池中最大 socket 数量
+	});
 	const instance = axios.create({
 		baseURL: "https://api.siliconflow.cn/v1/chat/completions",
 		headers: {
 			"Content-Type": "application/json",
 			Authorization: "Bearer " + config.ai_tooken
 		},
-		timeout: 10000
+		timeout: 20000,
+		httpAgent: agent
 	});
 	return instance;
 }

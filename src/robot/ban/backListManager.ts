@@ -9,6 +9,7 @@ import { sendMsgToQQFriend, sendMsgToQQGroup } from "../../qq/sendMessage";
 import { readConfigFile } from "../../utils/localFile";
 import { banPlayerCommand } from "../../command/admin1/banPlayer";
 import { getAdminMemberInfo } from "../../qq/memberManager";
+import { queryPlayer } from "../player/serverPlayerManager";
 
 const url = path.join(process.cwd(), "data", "blackList.db");
 const createLocalTableSql = `CREATE TABLE IF NOT EXISTS localBlackList (
@@ -56,8 +57,15 @@ export async function addLocalBlackList(name: string, reason: string, admin_name
 			// 直接发送小电视屏蔽消息
 			sendMsgToQQFriend(`/ban ${group_name} ${name} ${reason}`, 3889013937);
 		}
-		// 顺便Ban一下
-		banPlayerCommand(name, `本地黑名单[${reason}]`, group_id, message_id, admin_qq, false);
+		// 是否在服务器中
+		const isInServer = await queryPlayer(name);
+		if (isInServer) {
+			// 处理不是小电视服务器
+			if (isInServer.serverPlayerManager.serverConfig.tv) {
+				// Ban一下
+				banPlayerCommand(name, `本地黑名单[${reason}]`, group_id, message_id, admin_qq, false);
+			}
+		}
 
 		// 是否已经存在
 		const querySql = `SELECT * FROM localBlackList WHERE personaId = ?`;

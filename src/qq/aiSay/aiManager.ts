@@ -4,7 +4,7 @@ import { sendHttpImgToQQGroup, sendMsgToQQGroupWithAI } from "../sendMessage";
 import { SQLiteDB } from "../../utils/sqlite";
 import { sendVoiceToQQGroup } from "../groupService";
 import { readConfigFile } from "../../utils/localFile";
-import { initAICheckBadWord } from "./aiCheckBadWord";
+import { aiCheckBadWord } from "./aiCheckBadWord";
 
 interface groupMsg {
 	name: string;
@@ -98,7 +98,18 @@ class AiManager {
 	}
 
 	/** 接收群聊消息 */
-	async receiveGroupMessage(group_id: number, message: string, name: string) {
+	async receiveGroupMessage(group_id: number, user_id: number, message_id: number, message: string, name: string, role: string) {
+		if (this.isEnable) {
+			// 排除群主和管理员
+			if (role !== "owner" && role !== "admin") {
+				// 检查不当言论
+				const isBad = await aiCheckBadWord(group_id, user_id, message_id, message);
+				if (isBad) {
+					return;
+				}
+			}
+		}
+
 		// 是否存在该群聊记录
 		if (!this.groupChatRecord[group_id]) {
 			this.groupChatRecord[group_id] = [{ name: name, text: message, time: new Date().getTime() }];
@@ -242,9 +253,9 @@ export async function initAiManager(group_id: number, name: string, qq: number) 
 }
 
 /** 更新ai管理器 */
-export function updateAiManager(group_id: number, message: string, name: string) {
+export function updateAiManager(group_id: number, user_id: number, message_id: number, message: string, name: string, role: string) {
 	if (aiManagers[group_id]) {
-		aiManagers[group_id].receiveGroupMessage(group_id, message, name);
+		aiManagers[group_id].receiveGroupMessage(group_id, user_id, message_id, message, name, role);
 	}
 }
 
@@ -265,8 +276,6 @@ export async function setEnable(group_id: number, isEnable: boolean) {
 	if (aiManagers[group_id]) {
 		aiManagers[group_id].isEnable = isEnable;
 	}
-	// 更新AI检查不当言论功能
-	initAICheckBadWord(group_id);
 }
 
 // 画图模型名称

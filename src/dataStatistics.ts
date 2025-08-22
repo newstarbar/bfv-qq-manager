@@ -519,10 +519,14 @@ async function queryPlayer(playerName: string): Promise<string> {
 		const params = [playerName];
 		const [winLoseRes] = await db.query(sql, params);
 		const winRate = (winLoseRes.wins / (winLoseRes.wins + winLoseRes.loses)) * 100;
+
+		// 总对局场数
+		const totalGames = await db.query(`SELECT COUNT(*) AS total FROM playerDetails WHERE name = ?`, [playerName]);
+		const totalGamesNum = totalGames[0].total;
 		await db.close();
 
 		if (res.length > 0) {
-			let message = `玩家${playerName}最近5次战绩：\n\n总胜率: ${winRate.toFixed(1)}%\n\n`;
+			let message = `玩家${playerName}最近5次战绩：\n\n总胜率: ${winRate.toFixed(1)}%\n总对局: ${totalGamesNum}场\n\n`;
 			res.forEach((data: any) => {
 				const winLose = getWinLoseMessage(data);
 				const time = formatTimestamp(data.timestamp);
