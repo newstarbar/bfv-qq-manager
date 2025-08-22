@@ -1,0 +1,27 @@
+[
+	{
+		"server_name": "[Zygo][S1]WuJuFei0-100",
+		"ban_list": [
+			{
+				"name": "二式冲锋枪",
+				"start_time": "08:30",
+				"end_time": "23:59"
+			},
+			{
+				"name": "特二式内火艇",
+				"start_time": "00:00",
+				"end_time": "23:59"
+			}
+		]
+	},
+	{
+		"server_name": "[Zygo][S2]WuJuFei0-200",
+		"ban_list": [
+			{
+				"name": "特二式内火艇",
+				"start_time": "00:00",
+				"end_time": "23:59"
+			}
+		]
+	}
+]

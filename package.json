@@ -12,7 +12,8 @@
 		"test": "tsc && node dist/dataStatistics.js",
 		"bomb": "tsc && ncc build dist/others/bombScanManager.js -o dist/bomb && pkg dist/bomb/index.js -t linux -o bombScanManager.sh --public",
 		"comp": "tsc && ncc build dist/others/competitionSystem.js -o dist/comp && pkg dist/comp/index.js -t linux -o competitionSystem.sh --public",
-		"detail": "tsc && ncc build dist/dataStatistics.js -o dist/detail && pkg dist/detail/index.js -t win -o data-statistics-win.exe --public && pkg dist/detail/index.js -t linux -o data-statistics-linux.sh --public"
+		"detail": "tsc && ncc build dist/dataStatistics.js -o dist/detail && pkg dist/detail/index.js -t win -o data-statistics-win.exe --public && pkg dist/detail/index.js -t linux -o data-statistics-linux.sh --public",
+		"tran": "tsc && ncc build dist/others/transferToV2_0_5Database.js -o dist/tran && pkg dist/tran/index.js -t win -o transferToV2_0_5Database-win.exe --public && pkg dist/tran/index.js -t linux -o transferToV2_0_5Database_linux.sh --public"
 	},
 	"author": "newline星空",
 	"license": "GPL-3.0-or-later",

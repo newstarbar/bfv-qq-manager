@@ -13,7 +13,7 @@ const options = {
 			content: [
 				{
 					type: "text",
-					text: "分析下面内容是否涉及政治或色情等敏感词，或者辱骂等不当言论，含有辱骂情形，判断是否有关国家、政治的内容，你只需要给出是或者否的答案即可。"
+					text: "分析下面内容是否涉及政治或色情等敏感词，或者辱骂等不当言论，含有辱骂情形，判断是否有关国家、政治的内容。是否有描述到历史人名、地名、事件。是否有用谐音、别音的辱骂词语，你只需要给出是或者否的答案即可。"
 				}
 			]
 		},
@@ -49,10 +49,11 @@ export async function aiCheckBadWord(group_id: number, user_id: number, message_
 		return;
 	}
 	try {
-		options.messages[0].content[0].text = "内容：" + content;
+		options.messages[1].content[0].text = "内容：" + content;
 		const response = await aiAxios().post("", options);
 		const data = response.data;
 		const message = data.choices[0].message.content;
+		logger.info(`AI返回内容: ${message}`);
 		if (message === "是") {
 			// 如果有不当言论，撤回消息并发送警告
 			await recallMsgToQQGroup(message_id);

@@ -1,7 +1,6 @@
 import sqlite3 from "sqlite3";
 import { open, Database } from "sqlite";
 import logger from "./logger";
-import { log } from "console";
 
 export class SQLiteDB {
 	private db: Database | null = null;

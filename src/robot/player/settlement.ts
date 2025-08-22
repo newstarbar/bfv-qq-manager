@@ -3,7 +3,7 @@ import { Player, ServerAdmin, ServerConfig } from "../../interface/ServerInfo";
 import { getAdminMemberInfo, isAdmin, isGroupMember } from "../../qq/memberManager";
 import { sendMsgToQQGroup } from "../../qq/sendMessage";
 import { statusAxios } from "../../utils/axios";
-import { readConfigFile } from "../../utils/localFile";
+import { BanWeapon, PlayerWeaponLimitConfig, readConfigFile, readPlayerWeaponLimitConfig } from "../../utils/localFile";
 import logger from "../../utils/logger";
 import { addTempBlackList, isTempBlackList } from "../ban/backListManager";
 import { kickPlayer } from "./checkPlayer";
@@ -43,42 +43,134 @@ const maxCount = 6 * 12; // 12分钟
 async function handleQueue() {
 	if (waitQueue.length > 0) {
 		const playerNameList = waitQueue.map((item) => item.playerName);
-		const res = await statusAxios().post("batch/player/lastest", {
-			playerNames: playerNameList,
-			token: readConfigFile().status_token
-		});
-		if (res.status === 200) {
-			if (res.data == null) {
-				// 清空队列
-				waitQueue = [];
-			} else {
-				const now = new Date().getTime();
-				for (let i = 0; i < waitQueue.length; i++) {
-					const settlement = waitQueue.shift();
-					if (!settlement) {
-						return;
-					}
-					if (settlement.count >= maxCount) {
-						// 超过最大次数
-						continue;
-					}
-					const playerRes = res.data.find((item: any) => item.name == settlement.playerName);
-					// 数据无效，重新加入队列
-					if (!playerRes || now - playerRes.timestamp > validTime) {
-						const newSettlement = { ...settlement, count: settlement.count + 1 };
-						waitQueue.push(newSettlement);
-					} else {
-						// 有效数据
-						isOverkill(settlement, playerRes.kills);
+		try {
+			const res = await statusAxios().post("batch/player/lastest", {
+				playerNames: playerNameList,
+				token: readConfigFile().status_token
+			});
+			if (res.status === 200) {
+				if (res.data == null) {
+					// 清空队列
+					waitQueue = [];
+				} else {
+					const now = new Date().getTime();
+					for (let i = 0; i < waitQueue.length; i++) {
+						const settlement = waitQueue.shift();
+						if (!settlement) {
+							return;
+						}
+						if (settlement.count >= maxCount) {
+							// 超过最大次数
+							continue;
+						}
+						const playerRes = res.data.find((item: any) => item.name == settlement.playerName);
+						// 数据无效，重新加入队列
+						if (!playerRes || now - playerRes.timestamp > validTime) {
+							const newSettlement = { ...settlement, count: settlement.count + 1 };
+							waitQueue.push(newSettlement);
+						} else {
+							// 有效数据
+							isOverkill(settlement, playerRes.kills);
+							isUseLimitWeapon(settlement.gameId, settlement.player, settlement.serverConfig, playerRes);
+						}
 					}
 				}
+			}
+		} catch (e) {
+			logger.info("未开启玩家战绩查询服务");
+		}
+	}
+}
+
+// 是否使用限制武器
+async function isUseLimitWeapon(gameId: number, player: Player, serverConfig: ServerConfig, playerRes: any): Promise<void> {
+	const { weapons, vehicles, gadgets } = playerRes;
+
+	// 检查是否为临时黑名单用户
+	const isTempBlack = await isTempBlackList(player.personaId);
+
+	// 读取武器限制配置
+	const banWeaponList = await readPlayerWeaponLimitConfig();
+
+	// 是否是管理员
+	const adminList = await getAdminMemberInfo(serverConfig.group_id, 1);
+	const isadmin = adminList.some((item) => item.player_name == player.name);
+	if (isadmin) {
+		return;
+	}
+
+	if (banWeaponList.length > 0) {
+		// 查找当前服务器的限制配置
+		const banList = banWeaponList.find((item: PlayerWeaponLimitConfig) => item.server_name == serverConfig.zh_name || item.server_name == serverConfig.en_name);
+		if (banList) {
+			if (banList.ban_list && banList.ban_list.length > 0) {
+				const now = new Date();
+
+				banList.ban_list.forEach((item: BanWeapon) => {
+					const { name, start_time, end_time } = item;
+
+					// 计算当天的开始和结束时间
+					const startTime = new Date(now.toDateString() + " " + start_time);
+					const endTime = new Date(now.toDateString() + " " + end_time);
+
+					// 检查是否在限制时间内
+					const isInTimeRange = now >= startTime && now <= endTime;
+
+					if (isInTimeRange) {
+						// 检查玩家是否使用了限制武器
+						const isUseWeapon = weapons.find((weapon: any) => weapon.name === name);
+						if (isUseWeapon) {
+							// 检查是否已经有该类型的黑名单记录
+							const isExit = isTempBlack.find((item: any) => item.reason_type === "限制武器" && item.reason_text.includes(name));
+
+							if (!isExit) {
+								sendMsgToQQGroup(
+									serverConfig.group_id,
+									`${serverConfig.zh_name}\n玩家: ${player.name}\n使用限制武器【${name}】${isUseWeapon.kills}杀\n已自动加入临时黑名单\n解除请联系管理员`,
+									null
+								);
+								addTempBlackList(player.name, player.personaId, "限制武器", `使用限制武器[${name}]${isUseWeapon.kills}杀`);
+								kickOverPlayer(gameId, serverConfig, player, "限制武器", `使用限制武器[${name}]${isUseWeapon.kills}杀`);
+							}
+						}
+						// 检查玩家是否使用了限制载具
+						const isUseVehicle = vehicles.find((vehicle: any) => vehicle.name === name);
+						if (isUseVehicle) {
+							const isExit = isTempBlack.find((item: any) => item.reason_type === "限制载具" && item.reason_text.includes(name));
+							if (!isExit) {
+								sendMsgToQQGroup(
+									serverConfig.group_id,
+									`${serverConfig.zh_name}\n玩家: ${player.name}\n使用限制载具【${name}】${isUseVehicle.kills}杀\n已自动加入临时黑名单\n解除请联系管理员`,
+									null
+								);
+								addTempBlackList(player.name, player.personaId, "限制载具", `使用限制载具[${name}]${isUseVehicle.kills}杀`);
+								kickOverPlayer(gameId, serverConfig, player, "限制载具", `使用限制载具[${name}]${isUseVehicle.kills}杀`);
+							}
+						}
+
+						// 检查玩家是否使用了限制道具
+						const isUseGadget = gadgets.find((gadget: any) => gadget.name === name);
+						if (isUseGadget) {
+							const isExit = isTempBlack.find((item: any) => item.reason_type === "限制道具" && item.reason_text.includes(name));
+							if (!isExit) {
+								sendMsgToQQGroup(
+									serverConfig.group_id,
+									`${serverConfig.zh_name}\n玩家: ${player.name}\n使用限制道具【${name}】${isUseGadget.kills}杀\n已自动加入临时黑名单\n解除请联系管理员`,
+									null
+								);
+								addTempBlackList(player.name, player.personaId, "限制道具", `使用限制道具[${name}]${isUseGadget.kills}杀`);
+								kickOverPlayer(gameId, serverConfig, player, "限制道具", `使用限制道具[${name}]${isUseGadget.kills}杀`);
+							}
+						}
+					}
+				});
 			}
 		}
 	}
 }
 
 // 查询是否超杀
-async function isOverkill(settlement: Settlement, playerKills: number) {
+async function isOverkill(settlement: Settlement, playerKills: number): Promise<void> {
 	const { serverConfig, player } = settlement;
 	if (player.isWarmed) {
 		return;
@@ -107,7 +199,7 @@ async function isOverkill(settlement: Settlement, playerKills: number) {
 				null
 			);
 			addTempBlackList(player.name, player.personaId, "超杀", `群内超杀数${playerKills}大于${serverConfig.kill}`);
-			kickOverKillPlayer(settlement.gameId, serverConfig, player, `群内超杀数${playerKills}大于${serverConfig.kill}`);
+			kickOverPlayer(settlement.gameId, serverConfig, player, "超杀", `群内超杀数${playerKills}大于${serverConfig.kill}`);
 		}
 	} else {
 		if (playerKills > serverConfig.nokill) {
@@ -117,7 +209,7 @@ async function isOverkill(settlement: Settlement, playerKills: number) {
 				null
 			);
 			addTempBlackList(player.name, player.personaId, "超杀", `路人超杀数${playerKills}大于${serverConfig.nokill}`);
-			kickOverKillPlayer(settlement.gameId, serverConfig, player, `路人超杀数${playerKills}大于${serverConfig.nokill}`);
+			kickOverPlayer(settlement.gameId, serverConfig, player, "超杀", `路人超杀数${playerKills}大于${serverConfig.nokill}`);
 		}
 	}
 }
@@ -133,10 +225,10 @@ export function addToQueue(gameId: number, serverConfig: ServerConfig, player: P
 }
 
 /** 踢出超杀玩家 */
-function kickOverKillPlayer(gameId: number, serverConfig: ServerConfig, player: Player, reason_text: string) {
+function kickOverPlayer(gameId: number, serverConfig: ServerConfig, player: Player, reason_type: string, reason_text: string) {
 	// 直接踢出
-	const reason = `超杀临时黑名单[${reason_text}]`;
-	const admin: ServerAdmin = { name: "机器人", user_id: 0 };
+	const reason = `${reason_type}临时黑名单[${reason_text}]`;
+	const admin: ServerAdmin = { name: readConfigFile().bot_name, user_id: 0 };
 	const tempPlayerLife: PlayerLife = {
 		name: player.name,
 		personaId: player.personaId,

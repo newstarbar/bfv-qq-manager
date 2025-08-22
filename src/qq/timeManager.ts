@@ -4,7 +4,8 @@ import { getAllServerConfig } from "../robot/serverConfigManager";
 import { bfvAxios, qqAxios } from "../utils/axios";
 import logger from "../utils/logger";
 import { translateMapModeName } from "../utils/translation";
-import { sendClockToQQGroup, setGroupWholeBan } from "./groupService";
+import { currentVersion } from "../utils/version";
+import { sendClockToQQGroup, setGroupWholeBan, setQQSignature } from "./groupService";
 import { sendMsgToQQGroup } from "./sendMessage";
 
 let timeManager: NodeJS.Timeout | null = null;
@@ -74,6 +75,11 @@ async function timeManagerCore(): Promise<void> {
 	//         remindMapPoolVoting();
 	//     }
 	// }
+
+	// 每天0点更新QQ个性签名
+	if (hour == 0 && minute == 0) {
+		setQQSignature(`版本:${currentVersion}|开源地址:https://github.com/newstarbar/bfv-qq-manager|反馈群:1028746092`);
+	}
 
 	let serverConfig = await getAllServerConfig(false);
 	serverConfig = serverConfig as ServerConfig[];

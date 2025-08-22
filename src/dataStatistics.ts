@@ -32,11 +32,15 @@ type PlayerDetail = {
 	heals: number; // 治疗分
 	revives: number; // 救援数
 	headshots: number; // 爆头数
+	awardScore: number; // 奖励分
+	bonusScore: number; // 奖金分
+	squadScore: number; // 小队分
 	totalScore: number; // 总分
 	deaths: number;
 	wins: number;
 	loses: number;
 	timePlayed: number;
+	timestamp: number;
 	weapons: Weapons[];
 	vehicles: Vehicles[];
 	gadgets: Gadgets[];
@@ -48,7 +52,7 @@ let detailDataCache: PlayerDetail[] = [];
 /** 关服时间隔 */
 const stopInterval = 60 * 15; // 15分钟
 /** 开服时间隔 */
-const startInterval = 60 * 5; // 5分钟
+const startInterval = 60 * 4; // 5分钟
 
 let count = 60 * 15;
 let isOpening = false;
@@ -73,6 +77,9 @@ const createPlayerDetailsTableSql = `CREATE TABLE IF NOT EXISTS playerDetails (
     heals INTEGER,
     revives INTEGER,
     headshots INTEGER,
+    awardScore INTEGER,
+    bonusScore INTEGER,
+    squadScore INTEGER,
     totalScore INTEGER,
     timestamp INTEGER
 )`;
@@ -206,17 +213,17 @@ function main() {
 // 查询服务器和玩家数据
 async function query() {
 	try {
-		const serverRes = await bfvAxios().get("bfv/servers", {
+		const serverRes = await gtAxios().get("bfv/servers/", {
 			params: {
-				serverName: group_name
+				name: group_name
 			},
 			timeout: 30000
 		});
 
-		const server = serverRes.data.data;
+		const server = serverRes.data.servers;
 
-		if (!server) {
-			logger.warn(`未查询到服务器: ${group_name}`);
+		if (!server || server.length === 0) {
+			logger.warn(`没有服务器: ${group_name}`);
 			isOpening = false;
 			return;
 		}
@@ -279,7 +286,11 @@ async function query() {
 						heals: player.heals,
 						revives: player.revives,
 						headshots: player.headshots,
+						awardScore: player.awardScore,
+						bonusScore: player.bonusScore,
+						squadScore: player.squadScore,
 						totalScore: player.totalScore,
+						timestamp: new Date().getTime(),
 						weapons: player.weapons.map((weapon: any) => ({
 							name: weapon.name,
 							categories: weapon.categories,
@@ -326,7 +337,6 @@ async function query() {
 		} catch (e) {
 			const error = e as AxiosError;
 			const errorData: any = error.response?.data;
-
 			if (errorData && errorData.errors && errorData.errors[0] === "server not found") {
 				logger.info(`未查询到服务器: ${group_name}`);
 			} else if (error.status === 401) {
@@ -339,7 +349,7 @@ async function query() {
 	} catch (e) {
 		const error = e as AxiosError;
 		count = startInterval / 2;
-		logger.warn(`BFV查询社区服务器列表失败: ${error.message}`);
+		logger.warn(`GT查询社区服务器列表失败: ${error.message}`);
 	}
 }
 
@@ -355,6 +365,10 @@ function calculateDiff(cachePlayer: PlayerDetail, newPlayer: PlayerDetail) {
 	const diffHeals = newPlayer.heals - cachePlayer.heals;
 	const diffRevives = newPlayer.revives - cachePlayer.revives;
 	const diffHeadshots = newPlayer.headshots - cachePlayer.headshots;
+
+	const diffAwardScore = newPlayer.awardScore - cachePlayer.awardScore;
+	const diffBonusScore = newPlayer.bonusScore - cachePlayer.bonusScore;
+	const diffSquadScore = newPlayer.squadScore - cachePlayer.squadScore;
 	const diffTotalScore = newPlayer.totalScore - cachePlayer.totalScore;
 
 	const diffWeapons = getDiffItems(cachePlayer.weapons, newPlayer.weapons);
@@ -371,6 +385,9 @@ function calculateDiff(cachePlayer: PlayerDetail, newPlayer: PlayerDetail) {
 		diffHeals,
 		diffRevives,
 		diffHeadshots,
+		diffAwardScore,
+		diffBonusScore,
+		diffSquadScore,
 		diffTotalScore,
 		diffWeapons,
 		diffVehicles,
@@ -404,16 +421,16 @@ function getDiffItems(cacheItems: any[], newItems: any[]) {
 function formatDiffMessage(name: string, personaId: number, diff: any) {
 	return `玩家新增一条记录：${name} ${personaId} \n击杀：${diff.diffKills} 死亡：${diff.diffDeaths} 胜利：${diff.diffWins} 失败：${diff.diffloses} 时长：${diff.diffTimePlayed} 助攻：${
 		diff.diffKillAssists
-	} 治疗：${diff.diffHeals} 救援：${diff.diffRevives} 爆头：${diff.diffHeadshots} 总分：${diff.diffTotalScore} \n武器：${diff.diffWeapons
-		.map((weapon: any) => `${weapon.name} ${weapon.categories} ${weapon.kills} ${weapon.timeEquipped}`)
-		.join(",")} \n载具：${diff.diffVehicles.map((vehicle: any) => `${vehicle.name} ${vehicle.categories} ${vehicle.kills} ${vehicle.timeEquipped}`).join(",")} \n配备：${diff.diffGadgets
-		.map((gadget: any) => `${gadget.name} ${gadget.categories} ${gadget.kills} ${gadget.timeEquipped}`)
-		.join(",")}`;
+	} 治疗：${diff.diffHeals} 救援：${diff.diffRevives} 爆头：${diff.diffHeadshots} 奖励分：${diff.diffAwardScore} 附加分：${diff.diffBonusScore} 小队分：${diff.diffSquadScore} 总分：${
+		diff.diffTotalScore
+	} \n武器：${diff.diffWeapons.map((weapon: any) => `${weapon.name} ${weapon.categories} ${weapon.kills} ${weapon.timeEquipped}`).join(",")} \n载具：${diff.diffVehicles
+		.map((vehicle: any) => `${vehicle.name} ${vehicle.categories} ${vehicle.kills} ${vehicle.timeEquipped}`)
+		.join(",")} \n配备：${diff.diffGadgets.map((gadget: any) => `${gadget.name} ${gadget.categories} ${gadget.kills} ${gadget.timeEquipped}`).join(",")}`;
 }
 
 // 格式化新玩家消息
 function formatNewPlayerMessage(player: PlayerDetail) {
-	return `玩家新增一条缓存记录：${player.name} ${player.personaId} 总击杀: ${player.kills} 总死亡: ${player.deaths} 总胜利: ${player.wins} 总失败: ${player.loses} 总时长: ${player.timePlayed} 总助攻: ${player.killAssists} 总治疗: ${player.heals} 总救援: ${player.revives} 总爆头: ${player.headshots} 总分: ${player.totalScore}`;
+	return `玩家新增一条缓存记录：${player.name} ${player.personaId} 总击杀: ${player.kills} 总死亡: ${player.deaths} 总胜利: ${player.wins} 总失败: ${player.loses} 总时长: ${player.timePlayed} 总助攻: ${player.killAssists} 总治疗: ${player.heals} 总救援: ${player.revives} 总爆头: ${player.headshots} 奖励分: ${player.awardScore} 附加分: ${player.bonusScore} 小队分: ${player.squadScore} 总分: ${player.totalScore}`;
 }
 
 // 保存数据
@@ -430,6 +447,9 @@ async function saveData(
 		diffHeals: number;
 		diffRevives: number;
 		diffHeadshots: number;
+		diffAwardScore: number;
+		diffBonusScore: number;
+		diffSquadScore: number;
 		diffTotalScore: number;
 		diffWeapons: Weapons[];
 		diffVehicles: Vehicles[];
@@ -444,7 +464,7 @@ async function saveData(
 		await db.execute(createVehiclesTableSql);
 		await db.execute(createGadgetsTableSql);
 
-		const sql = `INSERT INTO playerDetails (name, personaId, kills, deaths, wins, loses, timePlayed, killAssists, heals, revives, headshots, totalScore, timestamp) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`;
+		const sql = `INSERT INTO playerDetails (name, personaId, kills, deaths, wins, loses, timePlayed, killAssists, heals, revives, headshots, awardScore, bonusScore, squadScore, totalScore, timestamp) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
 		const params = [
 			name,
 			personaId,
@@ -457,6 +477,9 @@ async function saveData(
 			diff.diffHeals,
 			diff.diffRevives,
 			diff.diffHeadshots,
+			diff.diffAwardScore,
+			diff.diffBonusScore,
+			diff.diffSquadScore,
 			diff.diffTotalScore,
 			timestamp
 		];
@@ -505,7 +528,7 @@ async function queryPlayer(playerName: string): Promise<string> {
 				const time = formatTimestamp(data.timestamp);
 				message += `【状态: ${winLose}】 ${data.kills}杀\n${data.killAssists}助攻  ${data.deaths} 死  ${data.revives}救援  ${data.headshots}爆头\n总分: ${(data.totalScore / 10000).toFixed(
 					1
-				)}w  时长: ${(data.timePlayed / 60).toFixed(1)}分钟\n===${time}===\n\n`;
+				)}w  时长: ${(data.timePlayed / 60).toFixed(1)}分钟\n奖励分: ${data.awardScore}\n附加分: ${data.bonusScore}\n小队分: ${data.squadScore}\n===${time}===\n\n`;
 			});
 			return message;
 		} else {
@@ -522,6 +545,10 @@ async function queryPlayerDetail(playerName: string): Promise<string> {
 	try {
 		const db = new SQLiteDB(dbPath, createPlayerDetailsTableSql);
 		await db.open();
+		db.execute(createWeaponsTableSql);
+		db.execute(createVehiclesTableSql);
+		db.execute(createGadgetsTableSql);
+
 		const res = await db.query(`SELECT * FROM playerDetails WHERE name = ? ORDER BY timestamp DESC LIMIT 5`, [playerName]);
 		const weapons = await db.query(`SELECT * FROM weapons WHERE playerName = ? ORDER BY timestamp DESC LIMIT 100`, [playerName]);
 		const vehicles = await db.query(`SELECT * FROM vehicles WHERE playerName = ? ORDER BY timestamp DESC LIMIT 100`, [playerName]);
@@ -580,30 +607,164 @@ async function queryPlayerLastDetail(playerName: string): Promise<PlayerDetail |
 	}
 }
 
-// 批量查询玩家的最近一次战绩
+// 批量查询玩家的最近一次战绩（关联数据与主记录时间戳匹配）
 async function batchQueryPlayerLastDetail(playerNames: string[]): Promise<PlayerDetail[] | null> {
 	try {
 		const db = new SQLiteDB(dbPath, createPlayerDetailsTableSql);
 		await db.open();
+		db.execute(createWeaponsTableSql);
+		db.execute(createVehiclesTableSql);
+		db.execute(createGadgetsTableSql);
 
-		// 使用窗口函数为每个玩家获取最新的记录
+		// 构建参数列表（主表和三个关联表各用一次playerNames）
+		const params = [...playerNames, ...playerNames, ...playerNames, ...playerNames];
+
+		// 关联查询，确保武器、载具、配备数据与玩家战绩时间戳匹配
 		const query = `
-            SELECT * FROM (
-                SELECT *,
-                ROW_NUMBER() OVER (PARTITION BY name ORDER BY timestamp DESC) as rn
-                FROM playerDetails 
-                WHERE name IN (${playerNames.map(() => "?").join(",")})
-            ) WHERE rn = 1
-        `;
+      SELECT 
+        -- 玩家基本战绩信息
+        pd.id,
+        pd.name,
+        pd.personaId,
+        pd.kills,
+        pd.deaths,
+        pd.wins,
+        pd.loses,
+        pd.timePlayed,
+        pd.killAssists,
+        pd.heals,
+        pd.revives,
+        pd.headshots,
+        pd.awardScore,
+        pd.bonusScore,
+        pd.squadScore,
+        pd.totalScore,
+        pd.timestamp as detail_timestamp,
+        
+        -- 武器信息（包含时间戳）
+        w.name as weapon_name,
+        w.categories as weapon_categories,
+        w.kills as weapon_kills,
+        w.timeEquipped as weapon_timeEquipped,
+        w.timestamp as weapon_timestamp,
+        
+        -- 载具信息（包含时间戳）
+        v.name as vehicle_name,
+        v.categories as vehicle_categories,
+        v.kills as vehicle_kills,
+        v.timeEquipped as vehicle_timeEquipped,
+        v.timestamp as vehicle_timestamp,
+        
+        -- 配件信息（包含时间戳）
+        g.name as gadget_name,
+        g.categories as gadget_categories,
+        g.kills as gadget_kills,
+        g.timeEquipped as gadget_timeEquipped,
+        g.timestamp as gadget_timestamp
+        
+      FROM (
+        -- 玩家最新战绩主表
+        SELECT *,
+        ROW_NUMBER() OVER (PARTITION BY name ORDER BY timestamp DESC) as rn
+        FROM playerDetails 
+        WHERE name IN (${playerNames.map(() => "?").join(",")})
+      ) pd
+      
+      -- 左连接同时间戳的武器数据
+      LEFT JOIN (
+        SELECT *
+        FROM weapons
+        WHERE playerName IN (${playerNames.map(() => "?").join(",")})
+      ) w ON pd.name = w.playerName AND pd.timestamp = w.timestamp
+      
+      -- 左连接同时间戳的载具数据
+      LEFT JOIN (
+        SELECT *
+        FROM vehicles
+        WHERE playerName IN (${playerNames.map(() => "?").join(",")})
+      ) v ON pd.name = v.playerName AND pd.timestamp = v.timestamp
+      
+      -- 左连接同时间戳的配件数据
+      LEFT JOIN (
+        SELECT *
+        FROM gadgets
+        WHERE playerName IN (${playerNames.map(() => "?").join(",")})
+      ) g ON pd.name = g.playerName AND pd.timestamp = g.timestamp
+      
+      WHERE pd.rn = 1
+    `;
 
-		const res = await db.query(query, playerNames);
+		const rawResults = await db.query(query, params);
 		await db.close();
 
-		if (res.length > 0) {
-			return res;
-		} else {
+		if (rawResults.length === 0) {
 			return null;
 		}
+
+		// 按玩家名分组，合并同玩家的多条武器/载具/配件记录
+		const groupedResults: Record<string, PlayerDetail> = {};
+
+		for (const raw of rawResults) {
+			const playerName = raw.name;
+
+			// 如果是新玩家，初始化基本信息
+			if (!groupedResults[playerName]) {
+				groupedResults[playerName] = {
+					name: raw.name,
+					personaId: raw.personaId,
+					kills: raw.kills,
+					deaths: raw.deaths,
+					wins: raw.wins,
+					loses: raw.loses,
+					timePlayed: raw.timePlayed,
+					killAssists: raw.killAssists,
+					heals: raw.heals,
+					revives: raw.revives,
+					headshots: raw.headshots,
+					awardScore: raw.awardScore,
+					bonusScore: raw.bonusScore,
+					squadScore: raw.squadScore,
+					totalScore: raw.totalScore,
+					timestamp: raw.detail_timestamp,
+					weapons: [],
+					vehicles: [],
+					gadgets: []
+				};
+			}
+
+			// 添加武器数据（去重处理）
+			if (raw.weapon_name && !groupedResults[playerName].weapons.some((w) => w.name === raw.weapon_name)) {
+				groupedResults[playerName].weapons.push({
+					name: raw.weapon_name,
+					categories: raw.weapon_categories,
+					kills: raw.weapon_kills,
+					timeEquipped: raw.weapon_timeEquipped
+				});
+			}
+
+			// 添加载具数据（去重处理）
+			if (raw.vehicle_name && !groupedResults[playerName].vehicles.some((v) => v.name === raw.vehicle_name)) {
+				groupedResults[playerName].vehicles.push({
+					name: raw.vehicle_name,
+					categories: raw.vehicle_categories,
+					kills: raw.vehicle_kills,
+					timeEquipped: raw.vehicle_timeEquipped
+				});
+			}
+
+			// 添加配件数据（去重处理）
+			if (raw.gadget_name && !groupedResults[playerName].gadgets.some((g) => g.name === raw.gadget_name)) {
+				groupedResults[playerName].gadgets.push({
+					name: raw.gadget_name,
+					categories: raw.gadget_categories,
+					kills: raw.gadget_kills,
+					timeEquipped: raw.gadget_timeEquipped
+				});
+			}
+		}
+
+		// 转换为数组返回
+		return Object.values(groupedResults);
 	} catch (error) {
 		logger.error(`批量查询玩家最近一次战绩时出错: ${error}`);
 		return null;

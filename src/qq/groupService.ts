@@ -174,6 +174,23 @@ export async function sendClockToQQGroup(groupId: number): Promise<void> {
 	}
 }
 
+/** 设置QQ个性签名 */
+export async function setQQSignature(signature: string): Promise<void> {
+	try {
+		qqAxios()
+			.post("set_self_longnick", { longNick: signature })
+			.then((res) => {
+				const data = res.data;
+				if (data.status === "failed") {
+					logger.error(`设置QQ签名失败: ${data.message}`);
+				}
+			});
+	} catch (err) {
+		const error = err as AxiosError;
+		logger.error(`[${error.code}] 响应数据：${JSON.stringify(error.message)}`);
+	}
+}
+
 /** 全体禁言 */
 export async function setGroupWholeBan(groupId: number, isBan: boolean): Promise<void> {
 	try {

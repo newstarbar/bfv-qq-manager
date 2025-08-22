@@ -221,7 +221,7 @@ export async function checkPlayersLimit(gameId: number, playerLifeData: PlayerLi
 			kickPlayer(gameId, playerLifeData, joinTime, banReason, config, botAdmin);
 		}
 	}
-	logger.info(`玩家 ${playerLifeData.name} 生涯数据检测完毕`);
+	logger.debug(`玩家 ${playerLifeData.name} 生涯数据检测完毕`);
 }
 
 /** 屏蔽玩家 */

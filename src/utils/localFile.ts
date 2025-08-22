@@ -23,3 +23,22 @@ export function readConfigFile(): {
 		return { status_ip: "", status_token: "", ws_ip: "", ws_token: "", http_ip: "", http_token: "", bot_name: "", bot_qq: 0, admin_qq: 0, group_name: "", ai_tooken: "", ai_model: "" };
 	}
 }
+
+export interface BanWeapon {
+	name: string;
+	start_time: string;
+	end_time: string;
+}
+export interface PlayerWeaponLimitConfig {
+	server_name: string;
+	ban_list: BanWeapon[];
+}
+
+/** 读取玩家武器限制配置文件 */
+export async function readPlayerWeaponLimitConfig(): Promise<PlayerWeaponLimitConfig[]> {
+	try {
+		return JSON.parse(fs.readFileSync(path.join(process.cwd(), "check_config.json"), "utf8"));
+	} catch (e) {
+		return [];
+	}
+}

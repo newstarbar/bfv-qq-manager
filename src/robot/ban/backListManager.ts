@@ -5,7 +5,7 @@ import { getNowDATETIME } from "../../utils/timeTool";
 import { LocalBlackPlayer, TempBlackPlayer } from "../../interface/player";
 import { getAllServerConfig } from "../serverConfigManager";
 import { ServerConfig } from "../../interface/ServerInfo";
-import { sendMsgToQQFriend } from "../../qq/sendMessage";
+import { sendMsgToQQFriend, sendMsgToQQGroup } from "../../qq/sendMessage";
 import { readConfigFile } from "../../utils/localFile";
 import { banPlayerCommand } from "../../command/admin1/banPlayer";
 import { getAdminMemberInfo } from "../../qq/memberManager";
@@ -30,7 +30,8 @@ const createGlobalTableSql = `CREATE TABLE IF NOT EXISTS globalBlackList (
     time DATETIME NOT NULL
 )`;
 const createTempTableSql = `CREATE TABLE IF NOT EXISTS tempBlackList (
-    personaId INTEGER PRIMARY KEY,
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+    personaId INTEGER NOT NULL,
     name TEXT NOT NULL,
     reason_type TEXT NOT NULL,
     reason_text TEXT NOT NULL,
@@ -104,9 +105,7 @@ export async function deleteLocalBlackList(name: string): Promise<string> {
 	if (queryResult.length > 0) {
 		const sql = `DELETE FROM localBlackList WHERE name = ?`;
 		await localDB.execute(sql, [name]);
-		message += `在本地黑名单中: \n删除${name}成功\n`;
-	} else {
-		message += `在本地黑名单中: \n${name}不存在\n`;
+		message += `在本地黑名单中: \n删除${name}成功\n原因: ${queryResult[0].reason}\n\n`;
 	}
 	await localDB.close();
 
@@ -120,10 +119,17 @@ export async function deleteLocalBlackList(name: string): Promise<string> {
 		const tempSql = `DELETE FROM tempBlackList WHERE name = ?`;
 		await tempDB.execute(tempSql, [name]);
 		message += `在临时黑名单中: \n删除${name}成功\n`;
-	} else {
-		message += `在临时黑名单中: \n${name}不存在\n`;
+		tempQueryResult.forEach(async (item) => {
+			const { reason_type, reason_text } = item;
+			message += `【${reason_type}】: ${reason_text}\n`;
+		});
 	}
 	await tempDB.close();
+
+	if (message === "") {
+		message = `未找到${name}的黑名单记录`;
+	}
+
 	return message;
 }
 
@@ -152,22 +158,12 @@ export async function addTempBlackList(name: string, personaId: number, reason_t
 	// 是否已经存在
 	const db = new SQLiteDB(url, createTempTableSql);
 	await db.open();
-	const querySql = `SELECT * FROM tempBlackList WHERE personaId = ?`;
-	const queryResult = await db.query(querySql, [personaId]);
 	const today = getNowDATETIME();
-	if (queryResult.length > 0) {
-		// 更新
-		const updateSql = `UPDATE tempBlackList SET name = ?, reason_type = ?, reason_text = ?, time = ? WHERE personaId = ?`;
-		await db.execute(updateSql, [name, reason_type, reason_text, today, personaId]);
-		await db.close();
-		return { isSuccess: true, content: `已经存在${name}的临时黑名单\n状态已更新\n原因类型: ${reason_type}\n原因内容: ${reason_text}` };
-	} else {
-		// 插入
-		const insertSql = `INSERT INTO tempBlackList (personaId, name, reason_type, reason_text, time) VALUES (?, ?, ?, ?, ?)`;
-		await db.execute(insertSql, [personaId, name, reason_type, reason_text, today]);
-		await db.close();
-		return { isSuccess: true, content: `添加${name}的临时黑名单成功\n原因类型: ${reason_type}\n原因内容: ${reason_text}` };
-	}
+	// 插入
+	const insertSql = `INSERT INTO tempBlackList (personaId, name, reason_type, reason_text, time) VALUES (?, ?, ?, ?, ?)`;
+	await db.execute(insertSql, [personaId, name, reason_type, reason_text, today]);
+	await db.close();
+	return { isSuccess: true, content: `添加${name}的临时黑名单成功\n原因类型: ${reason_type}\n原因内容: ${reason_text}` };
 }
 
 /** 查看所有临时黑名单 */
@@ -198,6 +194,15 @@ export async function removeTempBlackList(personaId: number): Promise<string> {
 	await db.execute(sql, [personaId]);
 	await db.close();
 	return `移除${personaId}的临时黑名单成功`;
+}
+
+/** 仅移出路人超杀临时黑名单 */
+export async function removeTempBlackListForRookie(personaId: number): Promise<void> {
+	const db = new SQLiteDB(url, createTempTableSql);
+	await db.open();
+	const sql = `DELETE FROM tempBlackList WHERE personaId = ? AND reason_type = ? AND reason_text LIKE ?`;
+	await db.execute(sql, [personaId, "超杀", "%路人%"]);
+	await db.close();
 }
 
 /** 添加全局黑名单 */
@@ -269,4 +274,18 @@ export async function isGlobalBlackList(personaId: number): Promise<{ personaId:
 	const queryResult = await db.query(querySql, [personaId]);
 	await db.close();
 	return queryResult;
+}
+
+/** 路人玩家进群自动解除超杀临时黑名单 */
+export async function handleGroupJoinTempBlack(group_id: number, user_id: number, personaId: number): Promise<void> {
+	const isTempBlack = await isTempBlackList(personaId);
+	if (isTempBlack.length > 0) {
+		const { reason_type, reason_text } = isTempBlack[0];
+		if (reason_type === "超杀" || reason_text.includes("路人")) {
+			// 解除黑名单
+			removeTempBlackListForRookie(personaId);
+			// 发送解除黑名单消息
+			sendMsgToQQGroup(group_id, `查询到你的未加群超杀记录, 已自动解除临时黑名单`, null, user_id);
+		}
+	}
 }

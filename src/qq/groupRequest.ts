@@ -1,8 +1,8 @@
-import { isTempBlackList, removeTempBlackList } from "../robot/ban/backListManager";
+import { handleGroupJoinTempBlack, isTempBlackList, removeTempBlackList } from "../robot/ban/backListManager";
 import { isPlayerNameExist, playerStatusInBfban, playerStatusInCommunity } from "../robot/cx/basePlayerQuery";
 import { handleAddGroupPlayerIsOnline } from "../robot/player/serverPlayerManager";
 import { groupRequest, setGroupMemberCard } from "./groupService";
-import { addOrUpdateMemberInfo, setPlayerNameAndPersonaId } from "./memberManager";
+import { addOrUpdateMemberInfo } from "./memberManager";
 import { sendMsgToQQGroup } from "./sendMessage";
 
 /** 管理群邀请处理加群请求 */
@@ -75,7 +75,7 @@ export async function handleGroupRequest(group_id: number, user_id: number, flag
 			handleAddGroupPlayerIsOnline(group_id, name);
 
 			// 检查临时黑名单
-			checkTempBlackList(group_id, user_id, personaId);
+			handleGroupJoinTempBlack(group_id, user_id, personaId);
 		}, 1000);
 	} else {
 		if (result === "网络异常, 查询玩家名称失败") {
@@ -92,20 +92,6 @@ export async function handleGroupRequest(group_id: number, user_id: number, flag
 			// 玩家不存在或网络错误
 			groupRequest(flag, false, "不存在此玩家,请确认ID正确,请勿填入任何无关内容,该加群请求有机器人自动处理");
 			sendMsgToQQGroup(group_id, `=======加群模块========\n用户: ${user_id}\n申请ID: ${content}\n${result}\n【已自动拒绝】\n======================`, null);
-		}
-	}
-}
-
-/** 查询是否需要解除临时黑名单 */
-async function checkTempBlackList(group_id: number, user_id: number, personaId: number): Promise<void> {
-	const isTempBlack = await isTempBlackList(personaId);
-	if (isTempBlack.length > 0) {
-		const { reason_type, reason_text } = isTempBlack[0];
-		if (reason_type === "超杀" || reason_text.includes("路人")) {
-			// 解除黑名单
-			removeTempBlackList(personaId);
-			// 发送解除黑名单消息
-			sendMsgToQQGroup(group_id, `查询到你的未加群超杀记录, 已自动解除临时黑名单`, null, user_id);
 		}
 	}
 }
