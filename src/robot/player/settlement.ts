@@ -124,13 +124,8 @@ async function isUseLimitWeapon(gameId: number, player: Player, serverConfig: Se
 							const isExit = isTempBlack.find((item: any) => item.reason_type === "限制武器" && item.reason_text.includes(name));
 
 							if (!isExit) {
-								sendMsgToQQGroup(
-									serverConfig.group_id,
-									`${serverConfig.zh_name}\n玩家: ${player.name}\n使用限制武器【${name}】${isUseWeapon.kills}杀\n已自动加入临时黑名单\n解除请联系管理员`,
-									null
-								);
-								addTempBlackList(player.name, player.personaId, "限制武器", `使用限制武器[${name}]${isUseWeapon.kills}杀`);
-								kickOverPlayer(gameId, serverConfig, player, "限制武器", `使用限制武器[${name}]${isUseWeapon.kills}杀`);
+								addTempBlackList(player.name, player.personaId, "限制武器", `使用限制武器【${name}】${isUseWeapon.kills}杀`);
+								kickOverPlayer(gameId, serverConfig, player, "限制武器", `使用限制武器【[${name}】${isUseWeapon.kills}杀`);
 							}
 						}
 						// 检查玩家是否使用了限制载具
@@ -138,13 +133,8 @@ async function isUseLimitWeapon(gameId: number, player: Player, serverConfig: Se
 						if (isUseVehicle) {
 							const isExit = isTempBlack.find((item: any) => item.reason_type === "限制载具" && item.reason_text.includes(name));
 							if (!isExit) {
-								sendMsgToQQGroup(
-									serverConfig.group_id,
-									`${serverConfig.zh_name}\n玩家: ${player.name}\n使用限制载具【${name}】${isUseVehicle.kills}杀\n已自动加入临时黑名单\n解除请联系管理员`,
-									null
-								);
-								addTempBlackList(player.name, player.personaId, "限制载具", `使用限制载具[${name}]${isUseVehicle.kills}杀`);
-								kickOverPlayer(gameId, serverConfig, player, "限制载具", `使用限制载具[${name}]${isUseVehicle.kills}杀`);
+								addTempBlackList(player.name, player.personaId, "限制载具", `使用限制载具【${name}】${isUseVehicle.kills}杀`);
+								kickOverPlayer(gameId, serverConfig, player, "限制载具", `使用限制载具【${name}】${isUseVehicle.kills}杀`);
 							}
 						}
 
@@ -153,13 +143,8 @@ async function isUseLimitWeapon(gameId: number, player: Player, serverConfig: Se
 						if (isUseGadget) {
 							const isExit = isTempBlack.find((item: any) => item.reason_type === "限制道具" && item.reason_text.includes(name));
 							if (!isExit) {
-								sendMsgToQQGroup(
-									serverConfig.group_id,
-									`${serverConfig.zh_name}\n玩家: ${player.name}\n使用限制道具【${name}】${isUseGadget.kills}杀\n已自动加入临时黑名单\n解除请联系管理员`,
-									null
-								);
-								addTempBlackList(player.name, player.personaId, "限制道具", `使用限制道具[${name}]${isUseGadget.kills}杀`);
-								kickOverPlayer(gameId, serverConfig, player, "限制道具", `使用限制道具[${name}]${isUseGadget.kills}杀`);
+								addTempBlackList(player.name, player.personaId, "限制道具", `使用限制道具【${name}】${isUseGadget.kills}杀`);
+								kickOverPlayer(gameId, serverConfig, player, "限制道具", `使用限制道具【${name}】${isUseGadget.kills}杀`);
 							}
 						}
 					}
@@ -193,21 +178,11 @@ async function isOverkill(settlement: Settlement, playerKills: number): Promise<
 
 	if (isGroup) {
 		if (playerKills > serverConfig.kill) {
-			sendMsgToQQGroup(
-				serverConfig.group_id,
-				`${serverConfig.zh_name}\n群友[${player.name}]超杀\n击杀数: ${playerKills} > ${serverConfig.kill}\n已自动加入临时黑名单\n暖服期间进服自动解除`,
-				null
-			);
 			addTempBlackList(player.name, player.personaId, "超杀", `群内超杀数${playerKills}大于${serverConfig.kill}`);
 			kickOverPlayer(settlement.gameId, serverConfig, player, "超杀", `群内超杀数${playerKills}大于${serverConfig.kill}`);
 		}
 	} else {
 		if (playerKills > serverConfig.nokill) {
-			sendMsgToQQGroup(
-				serverConfig.group_id,
-				`${serverConfig.zh_name}\n路人[${player.name}]超杀\n击杀数: ${playerKills} > ${serverConfig.nokill}\n已自动加入临时黑名单\n暖服期间进服自动解除`,
-				null
-			);
 			addTempBlackList(player.name, player.personaId, "超杀", `路人超杀数${playerKills}大于${serverConfig.nokill}`);
 			kickOverPlayer(settlement.gameId, serverConfig, player, "超杀", `路人超杀数${playerKills}大于${serverConfig.nokill}`);
 		}
@@ -226,6 +201,8 @@ export function addToQueue(gameId: number, serverConfig: ServerConfig, player: P
 
 /** 踢出超杀玩家 */
 function kickOverPlayer(gameId: number, serverConfig: ServerConfig, player: Player, reason_type: string, reason_text: string) {
+	sendMsgToQQGroup(serverConfig.group_id, `${serverConfig.zh_name}\n玩家: ${player.name}\n${reason_text}\n已自动加入临时黑名单\n暖服成功自动解除`, null);
+
 	// 直接踢出
 	const reason = `${reason_type}临时黑名单[${reason_text}]`;
 	const admin: ServerAdmin = { name: readConfigFile().bot_name, user_id: 0 };

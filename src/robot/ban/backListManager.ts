@@ -4,12 +4,14 @@ import { isPlayerNameExist } from "../cx/basePlayerQuery";
 import { getNowDATETIME } from "../../utils/timeTool";
 import { LocalBlackPlayer, TempBlackPlayer } from "../../interface/player";
 import { getAllServerConfig } from "../serverConfigManager";
-import { ServerConfig } from "../../interface/ServerInfo";
+import { ServerAdmin, ServerConfig } from "../../interface/ServerInfo";
 import { sendMsgToQQFriend, sendMsgToQQGroup } from "../../qq/sendMessage";
 import { readConfigFile } from "../../utils/localFile";
 import { banPlayerCommand } from "../../command/admin1/banPlayer";
 import { getAdminMemberInfo } from "../../qq/memberManager";
 import { queryPlayer } from "../player/serverPlayerManager";
+import { getPlayerBanRecord } from "./banRecord";
+import { sendUnBanPlayerCmd } from "../../qq/sendToRunRun";
 
 const url = path.join(process.cwd(), "data", "blackList.db");
 const createLocalTableSql = `CREATE TABLE IF NOT EXISTS localBlackList (
@@ -92,7 +94,7 @@ export async function addLocalBlackList(name: string, reason: string, admin_name
 }
 
 /** 删除本地黑名单 */
-export async function deleteLocalBlackList(name: string): Promise<string> {
+export async function deleteLocalBlackList(group_id: number, name: string): Promise<string> {
 	let message = "";
 	// 本地黑名单
 	const localDB = new SQLiteDB(url, createLocalTableSql);
@@ -111,6 +113,37 @@ export async function deleteLocalBlackList(name: string): Promise<string> {
 	const querySql = `SELECT * FROM localBlackList WHERE name = ?`;
 	const queryResult = await localDB.query(querySql, [name]);
 	if (queryResult.length > 0) {
+		// 是否有屏蔽记录
+		const banRecord = await getPlayerBanRecord(queryResult[0].name);
+		if (banRecord.length > 0) {
+			const record = banRecord[0];
+			// 不是小电视服务器
+			if (record.is_tv == 0) {
+				// 解除Ban
+				const config: ServerConfig = {
+					tag: "未知",
+					group_id: group_id,
+					zh_name: record.server_name,
+					en_name: record.server_name,
+					id: "未知",
+					level: -1,
+					warm_level: -1,
+					kd: -1,
+					kpm: -1,
+					nokill: -1,
+					kill: -1,
+					warm_player: -1,
+					tv: record.is_tv
+				};
+				// 构建admin对象
+				const admin: ServerAdmin = {
+					name: "管理员",
+					user_id: readConfigFile().bot_qq
+				};
+				sendUnBanPlayerCmd(record.game_id, record.player_name, config, admin, false);
+			}
+		}
+
 		const sql = `DELETE FROM localBlackList WHERE name = ?`;
 		await localDB.execute(sql, [name]);
 		message += `在本地黑名单中: \n删除${name}成功\n原因: ${queryResult[0].reason}\n\n`;

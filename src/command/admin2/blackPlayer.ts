@@ -44,7 +44,7 @@ export class BlackPlayerCommand implements Command {
 			}
 		} else if (this.regex2.test(command)) {
 			const playerName = command.match(this.regex2)![2];
-			const result = await deleteLocalBlackList(playerName);
+			const result = await deleteLocalBlackList(group_id, playerName);
 			sendMsgToQQGroup(group_id, result, message_id);
 		}
 	}

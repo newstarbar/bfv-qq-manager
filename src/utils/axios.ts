@@ -168,7 +168,7 @@ function createAIInstance(): AxiosInstance {
 	// 创建自定义的 https.Agent，设置 maxSockets 来控制连接池的大小
 	const agent = new https.Agent({
 		keepAlive: true,
-		maxSockets: 10 // 设置连接池中最大 socket 数量
+		maxSockets: 20 // 设置连接池中最大 socket 数量
 	});
 	const instance = axios.create({
 		baseURL: "https://api.siliconflow.cn/v1/chat/completions",

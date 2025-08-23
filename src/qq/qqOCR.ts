@@ -28,10 +28,9 @@ export async function ocrBfvName(group_id: number, user_id: number, imgUrl: stri
 	if (unNeedUserId.includes(user_id)) {
 		return null;
 	}
-	const res = await qqAxios().post(".ocr_image", {
-		image: imgUrl + ".jpg"
+	const res = await qqAxios().post("ocr_image", {
+		image: imgUrl + ".png"
 	});
-	logger.debug(res);
 	if (res.status === 200) {
 		const result = res.data.data;
 		let textList = "";

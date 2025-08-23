@@ -150,7 +150,7 @@ async function unbanPlayerCommand(playerName: string, group_id: number, message_
 		name: adminName?.player_name || "管理员",
 		user_id: user_id
 	};
-	sendUnBanPlayerCmd(gameId, playerName, config, admin);
+	sendUnBanPlayerCmd(gameId, playerName, config, admin, true);
 }
 
 /** 管理员踢出玩家指令 */

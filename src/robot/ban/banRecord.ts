@@ -47,8 +47,8 @@ export async function getPlayerBanRecord(playerName: string): Promise<any[]> {
 	const params = [playerName];
 	const result = await db.query(sql, params);
 	await db.close();
-	// 一个月内的记录
-	const oneMonthAgo = new Date(new Date().getTime() - 30 * 24 * 60 * 60 * 1000);
+	// 5天内的记录
+	const oneMonthAgo = new Date(new Date().getTime() - 5 * 24 * 60 * 60 * 1000);
 	const records = result.filter((record) => new Date(record.time) > oneMonthAgo);
 	return records;
 }

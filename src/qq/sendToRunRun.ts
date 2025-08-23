@@ -152,13 +152,13 @@ export async function sendKickPlayerCmd(gameId: number, playerLifeData: PlayerLi
 }
 
 /** 发送解除屏蔽指令 */
-export async function sendUnBanPlayerCmd(gameId: number, playerName: string, config: ServerConfig, admin: ServerAdmin): Promise<void> {
+export async function sendUnBanPlayerCmd(gameId: number, playerName: string, config: ServerConfig, admin: ServerAdmin, isReport: boolean = true): Promise<void> {
 	// 数据保存
 	banPlayerTemp.playerLife = { name: playerName } as any;
 	banPlayerTemp.gameId = gameId;
 	banPlayerTemp.config = config;
 	banPlayerTemp.admin = admin;
-	banPlayerTemp.isReport = true;
+	banPlayerTemp.isReport = isReport;
 	isUnbanPlayer = true;
 
 	const isTV = config.tv;
@@ -312,15 +312,14 @@ function onBanPlayerNotFoundEvent() {
 			const playerName = banPlayerTemp.playerLife?.name;
 			const reason = banPlayerTemp.reason;
 
-			// 是否是踢人失败
-			if (banPlayerTemp.isRobotKick) {
-				cmdList.shift();
-			}
-
 			sendMsgToQQGroup(group_id as number, `【玩家】: ${playerName}\n【原因】: ${reason}\n\n【屏蔽玩家失败】\n原因: 未找到玩家所在的服务器\n多次屏蔽失败, 已取消屏蔽`, null);
 		}
 		kickFailCount = 0;
 		cmdList.shift();
+		// 是否是踢人失败
+		if (banPlayerTemp.isRobotKick) {
+			cmdList.shift();
+		}
 
 		resetBanPlayerConfig();
 		isRunning = false;

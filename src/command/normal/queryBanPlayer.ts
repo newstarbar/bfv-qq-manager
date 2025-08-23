@@ -1,8 +1,9 @@
 import { Command } from "../../interface/command";
 import { sendMsgToQQGroup } from "../../qq/sendMessage";
-import { isLocalBlackList } from "../../robot/ban/backListManager";
+import { isLocalBlackList, isTempBlackList } from "../../robot/ban/backListManager";
 import { getPlayerBanRecord } from "../../robot/ban/banRecord";
 import { getCommunityBlockRecord, isPlayerNameExist } from "../../robot/cx/basePlayerQuery";
+import { readConfigFile } from "../../utils/localFile";
 import { padString } from "../../utils/stringTool";
 
 export class QueryBanPlayerCommand implements Command {
@@ -35,10 +36,23 @@ export class QueryBanPlayerCommand implements Command {
 				message += `【处理人】: ${isBlack[0].admin_name}\n`;
 				message += `【时间】: ${isBlack[0].time}\n\n`;
 			}
+			// 获取临时黑名单
+			const isTempBlack = await isTempBlackList(result.personaId);
+			if (isTempBlack.length > 0) {
+				message += "【黑名单】: 临时黑名单\n";
+				message += `【${isTempBlack[0].reason_type}】: ${isTempBlack[0].reason_text}\n`;
+				message += `【时间】: ${isTempBlack[0].time}\n\n`;
+			}
+
 			let banRecord = await getPlayerBanRecord(playerName);
+			//  过滤掉server_name一样，reason一样的记录, 因为可能是因为多次封禁导致的以内的记录
+			banRecord = banRecord.filter((item, index, arr) => {
+				return index === arr.findIndex((item2) => item2.server_name === item.server_name && item2.reason === item.reason);
+			});
+
 			if (banRecord.length > 0) {
 				const newBanRecord = banRecord.slice(0, 3);
-				message += "======本服屏蔽记录=======\n";
+				message += `======${readConfigFile().group_name}屏蔽记录=======\n`;
 				for (const record of newBanRecord) {
 					message += `【服名】: ${record.server_name}\n`;
 					message += `【原因】: ${record.reason}\n`;
@@ -47,10 +61,15 @@ export class QueryBanPlayerCommand implements Command {
 					message += `--------------------------------\n`;
 				}
 			} else {
-				message += "【本服屏蔽记录】: 无\n\n";
+				message += `【${readConfigFile().group_name}屏蔽记录】: 无\n\n`;
 			}
 
-			const reasonList = await getCommunityBlockRecord(result.personaId);
+			let reasonList = await getCommunityBlockRecord(result.personaId);
+			// 过滤掉serverName一样，reason一样的记录, 因为可能是因为多次封禁导致的以内的记录
+			reasonList.filter((item, index, arr) => {
+				return index === arr.findIndex((item2) => item2.serverName == item.serverName && item2.reason == item.reason);
+			});
+
 			if (reasonList.length > 0) {
 				message += "=======全社区记录=======\n";
 				reasonList.slice(0, 3);

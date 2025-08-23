@@ -106,7 +106,7 @@ export async function playerStatusInBfban(personaId: number): Promise<{ isNormal
 }
 
 /** 查询社区屏蔽记录 */
-export async function getCommunityBlockRecord(personaId: number): Promise<string[]> {
+export async function getCommunityBlockRecord(personaId: number): Promise<any[]> {
 	try {
 		const blockResult = await bfvAxios().get("player/getBannedLogsByPersonaId", {
 			params: {
