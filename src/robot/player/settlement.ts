@@ -1,6 +1,6 @@
 import { PlayerLife } from "../../interface/player";
-import { Player, ServerAdmin, ServerConfig } from "../../interface/ServerInfo";
-import { getAdminMemberInfo, isAdmin, isGroupMember } from "../../qq/memberManager";
+import { Player, ServerAdmin, ServerConfig, Team } from "../../interface/ServerInfo";
+import { getAdminMemberInfo, isGroupMember } from "../../qq/memberManager";
 import { sendMsgToQQGroup } from "../../qq/sendMessage";
 import { statusAxios } from "../../utils/axios";
 import { BanWeapon, PlayerWeaponLimitConfig, readConfigFile, readPlayerWeaponLimitConfig } from "../../utils/localFile";
@@ -11,6 +11,7 @@ import { kickPlayer } from "./checkPlayer";
 interface Settlement {
 	serverConfig: ServerConfig;
 	gameId: number;
+	mapName: string;
 	playerName: string;
 	player: Player;
 	count: number;
@@ -72,12 +73,53 @@ async function handleQueue() {
 							// 有效数据
 							isOverkill(settlement, playerRes.kills);
 							isUseLimitWeapon(settlement.gameId, settlement.player, settlement.serverConfig, playerRes);
+							isChangeTank(settlement, playerRes);
 						}
 					}
 				}
 			}
 		} catch (e) {
 			logger.info("未开启玩家战绩查询服务");
+		}
+	}
+}
+
+// 加入待处理队列
+export function addToQueue(gameId: number, mapName: string, serverConfig: ServerConfig, player: Player) {
+	// 是否已经在队列中
+	const exist = waitQueue.find((item) => item.playerName == player.name);
+	if (exist) {
+		return;
+	}
+	waitQueue.push({ serverConfig, gameId, mapName, playerName: player.name, player, count: 1 });
+}
+
+// 是否是换边坦克
+async function isChangeTank(settlement: Settlement, playerRes: any): Promise<void> {
+	// 是否是硫磺岛地图
+	if (settlement.mapName === "硫磺岛") {
+		// 查看队伍1是否有“八八式高射炮”或“九七式”击杀
+		const vehicles = playerRes.vehicles;
+		if (settlement.player.team === Team.one) {
+			const isUseVehicle1 = vehicles.find((item: any) => item.name === "八八式高射炮");
+			const isUseVehicle2 = vehicles.find((item: any) => item.name === "九七式");
+			if (isUseVehicle1) {
+				sendMsgToQQGroup(settlement.serverConfig.group_id, `===功能测试消息===\n玩家: ${settlement.player.name}\n【日械美军】\n美军使用[八八式]${isUseVehicle1.kills}杀\n请管理员核实`, null);
+			} else if (isUseVehicle2) {
+				sendMsgToQQGroup(settlement.serverConfig.group_id, `===功能测试消息===\n玩家: ${settlement.player.name}\n【日械美军】\n美军使用[九七式]${isUseVehicle2.kills}杀\n请管理员核实`, null);
+			}
+		} else if (settlement.player.team === Team.two) {
+			// 查看队伍2是否有“T34卡利欧波”或“谢尔曼坦克”或“LVT”击杀
+			const isUseVehicle1 = vehicles.find((item: any) => item.name === "T34卡利欧波");
+			const isUseVehicle2 = vehicles.find((item: any) => item.name === "谢尔曼坦克");
+			const isUseVehicle3 = vehicles.find((item: any) => item.name === "LVT");
+			if (isUseVehicle1) {
+				sendMsgToQQGroup(settlement.serverConfig.group_id, `===功能测试消息===\n玩家: ${settlement.player.name}\n【美械日军】\n日军使用[T34]${isUseVehicle1.kills}杀\n请管理员核实`, null);
+			} else if (isUseVehicle2) {
+				sendMsgToQQGroup(settlement.serverConfig.group_id, `===功能测试消息===\n玩家: ${settlement.player.name}\n【美械日军】\n日军使用[谢尔曼]${isUseVehicle2.kills}杀\n请管理员核实`, null);
+			} else if (isUseVehicle3) {
+				sendMsgToQQGroup(settlement.serverConfig.group_id, `===功能测试消息===\n玩家: ${settlement.player.name}\n【美械日军】\n日军使用[LVT]${isUseVehicle3.kills}杀\n请管理员核实`, null);
+			}
 		}
 	}
 }
@@ -125,7 +167,7 @@ async function isUseLimitWeapon(gameId: number, player: Player, serverConfig: Se
 
 							if (!isExit) {
 								addTempBlackList(player.name, player.personaId, "限制武器", `使用限制武器【${name}】${isUseWeapon.kills}杀`);
-								kickOverPlayer(gameId, serverConfig, player, "限制武器", `使用限制武器【[${name}】${isUseWeapon.kills}杀`);
+								kickOverPlayer(gameId, serverConfig, player, "限制武器", `使用限制武器【${name}】${isUseWeapon.kills}杀`);
 							}
 						}
 						// 检查玩家是否使用了限制载具
@@ -187,16 +229,6 @@ async function isOverkill(settlement: Settlement, playerKills: number): Promise<
 			kickOverPlayer(settlement.gameId, serverConfig, player, "超杀", `路人超杀数${playerKills}大于${serverConfig.nokill}`);
 		}
 	}
-}
-
-// 加入待处理队列
-export function addToQueue(gameId: number, serverConfig: ServerConfig, player: Player) {
-	// 是否已经在队列中
-	const exist = waitQueue.find((item) => item.playerName == player.name);
-	if (exist) {
-		return;
-	}
-	waitQueue.push({ serverConfig, gameId, playerName: player.name, player, count: 1 });
 }
 
 /** 踢出超杀玩家 */

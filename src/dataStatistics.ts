@@ -9,6 +9,7 @@ import { htmlToBase64Image } from "./qq/generateBase64Image";
 import express from "express";
 import { Axios, AxiosError } from "axios";
 import { getVersion } from "./utils/version";
+import { Team } from "./interface/ServerInfo";
 
 getVersion();
 
@@ -27,6 +28,7 @@ type Gadgets = { name: string; categories: string; kills: number; timeEquipped: 
 type PlayerDetail = {
 	name: string;
 	personaId: number;
+	team: Team;
 	kills: number;
 	killAssists: number; // 助攻
 	heals: number; // 治疗分
@@ -212,6 +214,7 @@ function main() {
 
 // 查询服务器和玩家数据
 async function query() {
+	logger.debug(`开始查询${group_name}服务器列表`);
 	try {
 		const serverRes = await gtAxios().get("bfv/servers/", {
 			params: {
@@ -229,6 +232,7 @@ async function query() {
 		}
 		isOpening = true;
 
+		logger.debug(`服务器列表: ${server.map((server: any) => server.gameId).join(",")}，开始查询服务器内部玩家列表`);
 		const gameIdStr = server.map((server: any) => server.gameId).join(",");
 
 		try {
@@ -242,21 +246,43 @@ async function query() {
 			let allPlayers: any[] = [];
 
 			const serverData = playerRes.data;
+			if (server.length === 1) {
+				let team1 = serverData.teams[0].players;
+				let team2 = serverData.teams[1].players;
+				team1.forEach((player: any) => {
+					player.team = Team.one;
+				});
+				team2.forEach((player: any) => {
+					player.team = Team.two;
+				});
+				allPlayers = [...team1, ...team2];
+			} else {
+				for (let i = 0; i < server.length; i++) {
+					const gameId = server[i].gameId;
+					if (!serverData[gameId] || !serverData[gameId].teams) {
+						continue;
+					}
+					let team1 = serverData[gameId].teams[0].players;
+					// 添加队伍标签属性
+					team1.forEach((player: any) => {
+						player.team = Team.one;
+					});
 
-			for (let i = 0; i < server.length; i++) {
-				const gameId = server[i].gameId;
-				if (!serverData[gameId] || !serverData[gameId].teams) {
-					continue;
+					let team2 = serverData[gameId].teams[1].players;
+					team2.forEach((player: any) => {
+						player.team = Team.two;
+					});
+
+					// 合并队伍数据
+					allPlayers.push(...team1, ...team2);
 				}
-				const team1 = serverData[gameId].teams[0].players;
-				const team2 = serverData[gameId].teams[1].players;
-				// 合并队伍数据
-				allPlayers.push(...team1, ...team2);
 			}
 
 			if (allPlayers.length === 0) {
+				logger.debug(`服务器${group_name}无玩家，玩家数据: ${allPlayers.length} 个`);
 				return;
 			}
+			logger.debug(`服务器${group_name}玩家列表共: ${allPlayers.length}个，开始查询玩家详细数据`);
 			let playerPersonaIds: number[] = allPlayers.map((player: any) => player.player_id);
 
 			const leafPlayers = detailDataCache.filter((player: any) => !playerPersonaIds.includes(player.personaId));
@@ -273,10 +299,12 @@ async function query() {
 					const personaId = player.personaId;
 					const isLeafPlayer = leafPlayers.find((player: any) => player.personaId == personaId);
 					const name = isLeafPlayer ? isLeafPlayer.name : allPlayers.find((player: any) => player.player_id == personaId).name;
+					const team = isLeafPlayer ? isLeafPlayer.team : allPlayers.find((player: any) => player.player_id == personaId).team;
 
 					const newPlayer: PlayerDetail = {
 						name,
 						personaId,
+						team,
 						kills: player.kills,
 						deaths: player.deaths,
 						wins: player.wins,
@@ -313,15 +341,22 @@ async function query() {
 
 					const cachePlayer = detailDataCache.find((player: any) => player.personaId == personaId);
 					if (cachePlayer) {
-						const diff = calculateDiff(cachePlayer, newPlayer);
-						if (diff.diffKills != 0) {
-							logger.debug(formatDiffMessage(name, personaId, diff));
-							await saveData(name, personaId, diff);
-							if (isLeafPlayer) {
-								detailDataCache = detailDataCache.filter((player: any) => player.personaId != personaId);
-							} else {
-								const index = detailDataCache.findIndex((player: any) => player.personaId == personaId);
-								detailDataCache[index] = newPlayer;
+						// 有没有personaId相同，但team不同的数据
+						if (cachePlayer.team != newPlayer.team) {
+							// 更新缓存
+							const index = detailDataCache.findIndex((player: any) => player.personaId == personaId);
+							detailDataCache[index] = newPlayer;
+						} else {
+							const diff = calculateDiff(cachePlayer, newPlayer);
+							if (diff.diffKills != 0) {
+								logger.debug(formatDiffMessage(name, personaId, diff));
+								await saveData(name, personaId, diff);
+								if (isLeafPlayer) {
+									detailDataCache = detailDataCache.filter((player: any) => player.personaId != personaId);
+								} else {
+									const index = detailDataCache.findIndex((player: any) => player.personaId == personaId);
+									detailDataCache[index] = newPlayer;
+								}
 							}
 						}
 					} else {
@@ -715,6 +750,7 @@ async function batchQueryPlayerLastDetail(playerNames: string[]): Promise<Player
 			if (!groupedResults[playerName]) {
 				groupedResults[playerName] = {
 					name: raw.name,
+					team: Team.unKnown,
 					personaId: raw.personaId,
 					kills: raw.kills,
 					deaths: raw.deaths,

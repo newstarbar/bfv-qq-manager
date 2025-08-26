@@ -274,7 +274,7 @@ class ServerPlayerManager implements PlayerManager {
 		logger.debug(`服务器: ${this.serverName} 一局结束========================>>>>>>>>>`);
 
 		for (const player of this.players.soldier) {
-			addToQueue(this.gameId, this.serverConfig, player);
+			addToQueue(this.gameId, this.mapName, this.serverConfig, player);
 		}
 	}
 
@@ -476,7 +476,7 @@ class ServerPlayerManager implements PlayerManager {
 		await addDelGroupOnlineMember(this.serverConfig.group_id, this.serverName, players, false);
 
 		players.forEach((player) => {
-			addToQueue(this.gameId, this.serverConfig, player);
+			addToQueue(this.gameId, this.mapName, this.serverConfig, player);
 		});
 	}
 

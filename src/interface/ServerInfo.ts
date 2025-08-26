@@ -35,14 +35,16 @@ export enum Team {
 	one = 1,
 	two = 2,
 	queue = 3,
-	spectator = 4
+	spectator = 4,
+	unKnown = 0
 }
 
 export const TeamName: { [key in Team]: string } = {
 	1: "队伍1",
 	2: "队伍2",
 	3: "排队中",
-	4: "观战"
+	4: "观战",
+	0: "未知"
 };
 
 /** 玩家信息 */
