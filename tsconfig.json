@@ -1,23 +1,15 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "lib": [
-      "ES2020",
-      "DOM"
-    ],
-    "module": "CommonJS", /* Specify what module code is generated. */
-    "rootDir": "./src", /* Specify the root folder within your source files. */
-    "moduleResolution": "node",
-    "outDir": "./dist", /* Specify an output folder for all emitted files. */
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "strict": true, /* Enable all strict type-checking options. */
-    "skipLibCheck": true /* Skip type checking all .d.ts files. */
-  },
-  "include": [
-    "src"
-  ], // 包括的目录
-  "exclude": [
-    "node_modules"
-  ] // 排除的目录
+	"compilerOptions": {
+		"target": "ES2022",
+		"lib": ["ES2020", "DOM"],
+		"module": "CommonJS" /* Specify what module code is generated. */,
+		"rootDir": "./src" /* Specify the root folder within your source files. */,
+		"outDir": "./dist" /* Specify an output folder for all emitted files. */,
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"strict": true /* Enable all strict type-checking options. */,
+		"skipLibCheck": true /* Skip type checking all .d.ts files. */
+	},
+	"include": ["src"], // 包括的目录
+	"exclude": ["node_modules"] // 排除的目录
 }

@@ -47,7 +47,7 @@ export async function aiCheckBadWord(group_id: number, user_id: number, message_
 		const response = await aiAxios().post("", options);
 		const data = response.data;
 		const message = data.choices[0].message.content;
-		logger.info(`AI返回内容: ${message}`);
+
 		if (message == "是") {
 			// 如果有不当言论，撤回消息并发送警告
 			await recallMsgToQQGroup(message_id);

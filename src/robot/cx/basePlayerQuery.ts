@@ -1,29 +1,40 @@
 import { AxiosError } from "axios";
-import { bfbanAxios, bfvAxios } from "../../utils/axios";
+import { bfbanAxios, bfvAxios, gtAxios } from "../../utils/axios";
 import { PlayerBaseInfo } from "../../interface/player";
 import { readConfigFile } from "../../utils/localFile";
+import logger from "../../utils/logger";
 
 const botqq = readConfigFile().bot_qq;
 /** 查询playerName是否存在 */
 export async function isPlayerNameExist(playerName: string, count = 0): Promise<PlayerBaseInfo | string> {
 	try {
-		const result = await bfvAxios().get("bfv/player", {
+		const result = await gtAxios().get("bfv/stats/", {
 			params: {
 				name: playerName
 			}
 		});
-		const data = result.data.data;
+		// const data = result.data.data;
+		// const playerInfo: PlayerBaseInfo = {
+		// 	name: data.name,
+		// 	personaId: data.personaId,
+		// 	lastLogin: data.lastLogin,
+		// 	registerDate: data.registerDate
+		// };
+		// return playerInfo;
+
+		const data = result.data;
 		const playerInfo: PlayerBaseInfo = {
-			name: data.name,
-			personaId: data.personaId,
-			lastLogin: data.lastLogin,
-			registerDate: data.registerDate
+			name: data.userName,
+			personaId: data.id,
+			lastLogin: null,
+			registerDate: null
 		};
 		return playerInfo;
 	} catch (e) {
 		const err = e as AxiosError;
 		const code = (err.response?.data as any)?.code;
-		if (code === "player.not_found") {
+		const errMsg = (err.response?.data as any)?.errors[0];
+		if (code === "player.not_found" || errMsg === "Player not found") {
 			return "此玩家不存在";
 		} else {
 			if (count < 2) {

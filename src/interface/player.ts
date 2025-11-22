@@ -57,8 +57,8 @@ export interface VechileData {
 export interface PlayerBaseInfo {
 	name: string;
 	personaId: number;
-	registerDate: string;
-	lastLogin: string;
+	registerDate: string | null;
+	lastLogin: string | null;
 }
 
 /** 玩家生涯武器载具的信息数据 */

@@ -1,5 +1,6 @@
 import { readConfigFile } from "./utils/localFile";
 import logger from "./utils/logger";
+import express from "express";
 import { WebSocket } from "ws";
 import { sendMsgToQQGroup, sendMsgToQQGroupWithAI } from "./qq/sendMessage";
 import { commandManager, getAllInitGroup, isGroupInit } from "./command/commandManger";
@@ -13,11 +14,12 @@ import { aiManagers, initAiManager } from "./qq/aiSay/aiManager";
 import { initTimeManager } from "./qq/timeManager";
 import { initSettlementTimer } from "./robot/player/settlement";
 import { getVersion } from "./utils/version";
+import { banPlayerCommand, kickPlayerCommand } from "./command/admin1/banPlayer";
 
 getVersion();
 
 // 连接ws和http状态
-const { ws_ip, ws_token, bot_qq, bot_name } = readConfigFile();
+const { ws_ip, ws_token, bot_qq, bot_name, status_token } = readConfigFile();
 const ws: WebSocket = new WebSocket(`ws://${ws_ip}/`, {
 	headers: {
 		Authorization: `Bearer ${ws_token}`
@@ -120,4 +122,53 @@ ws.on("error", (err) => {
 process.on("uncaughtException", (err) => {
 	const date = new Date();
 	logger.error(`未处理的错误: ${err}\n${err.stack}\n${date.toLocaleString()}`);
+});
+
+const app = express();
+// 开放post接口,端口默认为7639
+app.listen(7640, () => {
+	logger.info("屏蔽模块API服务器已启动 监听端口: 7640");
+});
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// 屏蔽模块API
+app.post("/ban/player", async (req, res) => {
+	const { playerName, resaon, group_id, token } = req.body;
+	if (token != status_token) {
+		res.status(401).json({ message: "无效的token" });
+		return;
+	}
+	if (!playerName || !resaon || !group_id) {
+		res.status(400).json({ message: "缺少必要参数" });
+		return;
+	}
+	const sendMsg = await banPlayerCommand(playerName, resaon, group_id, 0, 0, false);
+	logger.info(`API调用[屏蔽玩家]：${playerName} ${resaon} ${group_id}`);
+	if (sendMsg) {
+		res.json({ message: sendMsg });
+	} else {
+		// 返回null
+		res.json(null);
+	}
+});
+// 踢出成员API
+app.post("/kick/player", async (req, res) => {
+	const { playerName, resaon, group_id, token } = req.body;
+	if (token != status_token) {
+		res.status(401).json({ message: "无效的token" });
+		return;
+	}
+	if (!playerName || !resaon || !group_id) {
+		res.status(400).json({ message: "缺少必要参数" });
+		return;
+	}
+	logger.info(`API调用[屏蔽玩家]：${playerName} ${resaon} ${group_id}`);
+	const sendMsg = await kickPlayerCommand(playerName, resaon, group_id, 0, 0, false);
+	if (sendMsg) {
+		res.json({ message: sendMsg });
+	} else {
+		// 返回null
+		res.json(null);
+	}
 });

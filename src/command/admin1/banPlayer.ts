@@ -7,6 +7,7 @@ import { sendUnBanPlayerCmd } from "../../qq/sendToRunRun";
 import { getPlayerBanRecord } from "../../robot/ban/banRecord";
 import { banPlayer, kickPlayer } from "../../robot/player/checkPlayer";
 import { queryNearlyName, queryPlayer } from "../../robot/player/serverPlayerManager";
+import { readConfigFile } from "../../utils/localFile";
 import { padString } from "../../utils/stringTool";
 
 export class BanPlayerCommand implements Command {
@@ -55,20 +56,20 @@ export class BanPlayerCommand implements Command {
 }
 
 /** 管理员屏蔽玩家指令 */
-export async function banPlayerCommand(playerName: string, reason: string, group_id: number, message_id: number, user_id: number, is_report = true): Promise<void> {
+export async function banPlayerCommand(playerName: string, reason: string, group_id: number, message_id: number = 0, user_id: number = 0, is_report = true): Promise<string> {
 	// 去掉reason所有空格
 	const newReason = reason.replace(/\s+/g, "");
 
-	if (newReason.length > 50) {
+	if (newReason.length > 50 && message_id !== 0) {
 		sendMsgToQQGroup(group_id, `========屏蔽模块========\n屏蔽原因不能超过50个字符\n附带图片会占几百字符\n======================`, message_id);
-		return;
+		return "屏蔽原因不能超过50个字符";
 	}
 	// 构建admin对象
 	const adminNameList = await getAdminMemberInfo(group_id, 1);
 	const adminName = adminNameList.find((item) => item.user_id === user_id);
 	const admin: ServerAdmin = {
 		name: adminName?.player_name || "管理员",
-		user_id: user_id
+		user_id: user_id === 0 ? readConfigFile().bot_qq : user_id
 	};
 
 	// 查询玩家
@@ -79,6 +80,7 @@ export async function banPlayerCommand(playerName: string, reason: string, group
 		if (is_report) {
 			sendMsgToQQGroup(group_id, `========屏蔽模块========\n玩家${playerName}不存在\n请检查拼写或尝试以下近似匹配:\n\n${nearlyPlayersStr}\n======================`, message_id);
 		}
+		return "玩家不存在";
 	} else {
 		const gameId = result.serverPlayerManager.gameId;
 		const config = result.serverPlayerManager.serverConfig;
@@ -111,16 +113,18 @@ export async function banPlayerCommand(playerName: string, reason: string, group
 			if (is_report) {
 				sendMsgToQQGroup(group_id, `========屏蔽模块========\n指令已下达等待执行\n>>>>>>>>>>>>>>>>>`, message_id);
 			}
+			return "指令已下达等待执行";
 		} else {
 			if (is_report) {
 				sendMsgToQQGroup(group_id, `========屏蔽模块========\n${banResult.reason}`, message_id);
 			}
+			return banResult.reason;
 		}
 	}
 }
 
 /** 管理员解除屏蔽玩家指令 */
-async function unbanPlayerCommand(playerName: string, group_id: number, message_id: number, user_id: number): Promise<void> {
+async function unbanPlayerCommand(playerName: string, group_id: number, message_id: number, user_id: number = 0): Promise<void> {
 	const result = await getPlayerBanRecord(playerName);
 	if (result.length === 0) {
 		sendMsgToQQGroup(group_id, `========屏蔽模块========\n未查询到玩家${playerName}的屏蔽记录\n======================`, message_id);
@@ -154,20 +158,20 @@ async function unbanPlayerCommand(playerName: string, group_id: number, message_
 }
 
 /** 管理员踢出玩家指令 */
-async function kickPlayerCommand(playerName: string, reason: string, group_id: number, message_id: number, user_id: number, is_report = true): Promise<void> {
+export async function kickPlayerCommand(playerName: string, reason: string, group_id: number, message_id: number = 0, user_id: number = 0, is_report = true): Promise<string> {
 	// 去掉reason所有空格
 	const newReason = reason.replace(/\s+/g, "");
 
-	if (newReason.length > 50) {
+	if (newReason.length > 50 && message_id !== 0) {
 		sendMsgToQQGroup(group_id, `========踢人模块========\n踢人原因不能超过50个字符\n附带图片会占几百字符\n==========`, message_id);
-		return;
+		return "踢人原因不能超过50个字符";
 	}
 	// 构建admin对象
 	const adminNameList = await getAdminMemberInfo(group_id, 1);
 	const adminName = adminNameList.find((item) => item.user_id === user_id);
 	const admin: ServerAdmin = {
 		name: adminName?.player_name || "管理员",
-		user_id: user_id
+		user_id: user_id === 0 ? readConfigFile().bot_qq : user_id
 	};
 
 	// 查询玩家
@@ -178,6 +182,7 @@ async function kickPlayerCommand(playerName: string, reason: string, group_id: n
 		if (is_report) {
 			sendMsgToQQGroup(group_id, `========踢人模块========\n玩家${playerName}不存在\n请检查拼写或尝试以下近似匹配:\n\n${nearlyPlayersStr}\n==========`, message_id);
 		}
+		return "玩家不存在";
 	} else {
 		const gameId = result.serverPlayerManager.gameId;
 		const config = result.serverPlayerManager.serverConfig;
@@ -210,10 +215,12 @@ async function kickPlayerCommand(playerName: string, reason: string, group_id: n
 			if (is_report) {
 				sendMsgToQQGroup(group_id, `========踢人模块========\n指令已下达等待执行\n>>>>>>>>>>>>>>>>>`, message_id);
 			}
+			return "指令已下达等待执行";
 		} else {
 			if (is_report) {
 				sendMsgToQQGroup(group_id, `========踢人模块========\n${banResult.reason}`, message_id);
 			}
+			return banResult.reason;
 		}
 	}
 }

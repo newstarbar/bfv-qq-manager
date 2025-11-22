@@ -42,11 +42,11 @@ export class BindCommand implements Command {
 			}
 			// 绑定成功
 			const oldName = await setPlayerNameAndPersonaId(group_id, user_id, name, personaId);
+			const registerDateStr = result.registerDate ? result.registerDate.split("T")[0] : "未知";
+			const lastLoginStr = result.lastLogin ? result.lastLogin.split("T")[0] : "未知";
 			sendMsgToQQGroup(
 				group_id,
-				`=======绑定模块========\n前ID: ${oldName}\n新ID: ${name}\n[${personaId}]\n【社区】: ${communityContent}\n【BFBAN】: ${bfbanContent}\n【注册时间】: ${
-					result.registerDate.split("T")[0]
-				}\n【最后登录】: ${result.lastLogin.split("T")[0]}\n\n【绑定新ID成功】\n======================`,
+				`=======绑定模块========\n前ID: ${oldName}\n新ID: ${name}\n[${personaId}]\n【社区】: ${communityContent}\n【BFBAN】: ${bfbanContent}\n【注册时间】: ${registerDateStr}\n【最后登录】: ${lastLoginStr}\n\n【绑定新ID成功】\n======================`,
 				message_id
 			);
 

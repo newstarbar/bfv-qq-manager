@@ -42,7 +42,6 @@ import { ServerSayConfigCommand } from "./admin3/serverSayConfig";
 import { ServerSayConfigPrivateCommand } from "./private/serverSayConfig";
 import { SetWarmCommand } from "./admin2/setWarm";
 import { UpdateBotCommand } from "./admin2/updateBot";
-import { receiveGroupAllianceEvent } from "../qq/groupSystem/groupBan";
 import { updateAiManager, updateFaceUrls } from "../qq/aiSay/aiManager";
 import { EnableAiCommand } from "./admin2/enableAi";
 import { ocrBfvName } from "../qq/qqOCR";
@@ -50,7 +49,6 @@ import { CurfewCommand } from "./admin2/curfew";
 import { SuperCommand } from "./admin2/superCommand";
 import { AllCommunityServer } from "./normal/allCommunityServer";
 import { CXPlayerSayCommand } from "./normal/cxPlayerSay";
-import { aiCheckBadWord } from "../qq/aiSay/aiCheckBadWord";
 import { CXPlatoonCommand } from "./normal/cxPlatoon";
 
 let commandManagers: CommandManager | null = null;
@@ -119,8 +117,6 @@ export async function commandManager(e: any): Promise<void> {
 		const result = await isAdmin(1, null, e.user_id);
 		if (result.length > 0) {
 			await privateCommandManagers.processCommand(e, result[0].admin_level);
-		} else {
-			sendMsgToQQFriend("你没有权限使用该功能", user_id);
 		}
 	}
 }

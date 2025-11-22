@@ -52,11 +52,11 @@ export async function handleGroupRequest(group_id: number, user_id: number, flag
 		}
 		// 成功通过所有检查, 处理加群请求
 		await groupRequest(flag, true);
+		const registerDateStr = result.registerDate ? result.registerDate.split("T")[0] : "未知";
+		const lastLoginStr = result.lastLogin ? result.lastLogin.split("T")[0] : "未知";
 		await sendMsgToQQGroup(
 			group_id,
-			`=======加群模块========\n用户: ${user_id}\n游戏ID: ${name}\n[${personaId}]\n【社区状态】: ${communityContent}\n【BFBAN】: ${bfbanContent}\n【注册时间】: ${
-				result.registerDate.split("T")[0]
-			}\n【最后登录】: ${result.lastLogin.split("T")[0]}\n【已自动修改群昵称】\n======================`,
+			`=======加群模块========\n用户: ${user_id}\n游戏ID: ${name}\n[${personaId}]\n【社区状态】: ${communityContent}\n【BFBAN】: ${bfbanContent}\n【注册时间】: ${registerDateStr}\n【最后登录】: ${lastLoginStr}\n【已自动修改群昵称】\n======================`,
 			null
 		);
 		setTimeout(() => {
