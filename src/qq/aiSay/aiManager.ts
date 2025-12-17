@@ -133,7 +133,9 @@ class AiManager {
 
 		if (message.includes(this.qq.toString()) || message.includes(this.name)) {
 			const message = await this.reply(group_id);
-			sendMsgToQQGroupWithAI(group_id, message);
+			if (message) {
+				sendMsgToQQGroupWithAI(group_id, message);
+			}
 		}
 	}
 
@@ -151,9 +153,9 @@ class AiManager {
 	}
 
 	/** ai回复消息 */
-	async aiSay(text: string): Promise<string> {
+	async aiSay(text: string): Promise<string | null> {
 		if (!this.isEnable) {
-			return "AI功能未开启\nai=1 开启AI功能";
+			return null;
 		}
 
 		const chatContent: gptChatMessages[] = [
@@ -186,9 +188,9 @@ class AiManager {
 	}
 
 	/** 主动回复 */
-	async reply(group_id: number): Promise<string> {
+	async reply(group_id: number): Promise<string | null> {
 		if (!this.isEnable) {
-			return "AI功能未开启\nai=1 开启AI功能";
+			return null;
 		}
 		const messages = this.groupChatRecord[group_id];
 		let content: gptChatMessages[] = [

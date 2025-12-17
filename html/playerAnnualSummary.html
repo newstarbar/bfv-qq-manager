@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="UTF-8" />
+		<title><%=PLAYER_NAME%> · <%=YEAR%> 回忆杀</title>
+		<meta name="viewport" content="width=1080,user-scalable=no" />
+		<style>
+			:root {
+				--cy: #629ce2;
+				--pu: #e4e4e4;
+				--bg: #0a0a1a;
+			}
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+				font-family: "Exo 2", "PingFang SC", sans-serif;
+				color: #fff;
+			}
+			body {
+				width: 1080px;
+				margin: 0 auto;
+				background: var(--bg);
+			}
+			/* 背景图片容器 */
+			.bg-image {
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				z-index: -1;
+				background-size: cover;
+				background-position: center;
+				opacity: 0.3;
+			}
+			/* 使用CSS变量存储背景图片URL，减少重复请求 */
+			:root {
+				--bg-img-1: url("https://pic1.imgdb.cn/item/6942aaa8cf0d90563b3bf3cd.png");
+				--bg-img-2: url("hhttps://pic1.imgdb.cn/item/6942aaa8cf0d90563b3bf3cf.png");
+				--bg-img-3: url("https://pic1.imgdb.cn/item/6942aaa8cf0d90563b3bf3d0.png");
+			}
+
+			/* 不同区块的背景图片 */
+			.block:nth-child(1),
+			.block:nth-child(4),
+			.block:nth-child(7) {
+				background: rgba(0, 0, 0, 0.7) var(--bg-img-1) no-repeat center/cover;
+				background-blend-mode: overlay;
+			}
+
+			.block:nth-child(2),
+			.block:nth-child(5),
+			.block:nth-child(8) {
+				background: rgba(0, 0, 0, 0.7) var(--bg-img-2) no-repeat center/cover;
+				background-blend-mode: overlay;
+			}
+
+			.block:nth-child(3),
+			.block:nth-child(6) {
+				background: rgba(0, 0, 0, 0.7) var(--bg-img-3) no-repeat center/cover;
+				background-blend-mode: overlay;
+			}
+			.block {
+				width: 100%;
+				padding: 45px 70px 25px;
+			}
+			h1 {
+				font-size: 80px;
+				font-weight: 900;
+				background: linear-gradient(90deg, var(--cy), var(--pu));
+				-webkit-background-clip: text;
+				-webkit-text-fill-color: transparent;
+				line-height: 1;
+			}
+			h2 {
+				font-size: 42px;
+				margin: 0 0 12px;
+				font-weight: 700;
+			}
+			p {
+				font-size: 30px;
+				line-height: 1.5;
+				margin: 3px 0;
+			}
+			.xxl {
+				font-size: 72px;
+			}
+			.xl {
+				font-size: 58px;
+			}
+			.l {
+				font-size: 44px;
+			}
+			.m {
+				font-size: 34px;
+			}
+			.s {
+				font-size: 24px;
+			}
+			.xs {
+				font-size: 20px;
+			}
+			.n1 {
+				color: var(--cy);
+				font-weight: 800;
+			}
+			.n2 {
+				color: var(--pu);
+				font-weight: 800;
+			}
+			.note {
+				font-size: 20px;
+				color: #aaa;
+			}
+			.card {
+				background: linear-gradient(135deg, rgba(38, 255, 240, 0.08), rgba(181, 39, 255, 0.08));
+				border: 1px solid rgba(255, 255, 255, 0.12);
+				border-radius: 16px;
+				padding: 25px;
+				margin: 18px 0;
+			}
+			.tag {
+				display: inline-block;
+				background: rgba(255, 255, 255, 0.1);
+				border: 1px solid var(--cy);
+				padding: 8px 18px;
+				border-radius: 18px;
+				font-size: 20px;
+				margin: 4px 4px 0 0;
+			}
+			.tag--p {
+				border-color: var(--pu);
+				color: var(--pu);
+			}
+		</style>
+	</head>
+	<body>
+		<div class="block">
+			<h1><%=PLAYER_NAME%></h1>
+			<p class="xl"><%=YEAR%> 回忆杀</p>
+			<p class="note">—— 数据替你记得，我替你抒情</p>
+		</div>
+
+		<!-- 出场率 -->
+		<div class="block">
+			<h2>出场率</h2>
+			<div class="card">
+				<p class="l">在 <%=GROUP%> 打卡 <span class="xxl n1"><%=PLAYER_ONLINE_DAYS%></span> 天</p>
+				<p class="m">累计 <span class="xl n2"><%=PLAYER_ONLINE_HOURS%></span> 小时， 奋战 <span class="xl n1"><%=PLAYER_ROUNDS%></span> 局</p>
+				<!-- 标签池 -->
+				<% if (PLAYER_ONLINE_DAYS>=200) { %><span class="tag">打卡狂魔</span><% } %> <% if (PLAYER_ROUNDS>=1500) { %><span class="tag">再战一局</span><% } %> <% if (TIME_PLAYED_H>=300) {
+				%><span class="tag tag--p">超长待机</span><% } %> <% if (TIME_PLAYED_H>=200) { %><span class="tag tag--p">肝帝</span><% } %>
+			</div>
+		</div>
+
+		<!-- 封神一刻 -->
+		<div class="block">
+			<h2>封神一刻</h2>
+			<div class="card">
+				<p class="l">单局最高 <span class="xxl n2"><%=MAX_KILLS_ONE_ROUND || 0%></span> 杀， KD 飙到 <span class="xxl n2"><%=MAX_KD_ONE_ROUND || 0%></span></p>
+				<!-- 标签池 -->
+				<% if ((MAX_KILL_STREAK || 0)>=30 && (MAX_KD_ONE_ROUND || 0)>=8) { %><span class="tag tag--p">封神了</span><% } %> <% if ((MAX_KILL_STREAK || 0)>=25) { %><span class="tag"
+					>人间炮台</span
+				><% } %> <% if ((MAX_KILL_STREAK || 0)>=20) { %><span class="tag">连杀如麻</span><% } %> <% if ((MAX_KILLS_ONE_ROUND || 0)>=35) { %><span class="tag">单局魔王</span><% } %> <% if
+				((KD_RATIO || 0)>=5.0) { %><span class="tag tag--p">kd 妖孽</span><% } %> <% if ((KD_RATIO || 0)>=3.0) { %><span class="tag">kd 怪物</span><% } %>
+			</div>
+		</div>
+
+		<!-- 灵魂伴侣 -->
+		<div class="block">
+			<h2>灵魂伴侣</h2>
+			<div class="card">
+				<p class="l">最爱的枪 · <span class="xxl n1"><%=FAV_WEAPON_NAME || "暂无数据"%></span></p>
+				<p class="m">击杀 <span class="xl n2"><%=FAV_WEAPON_KILLS || 0%></span> 人， 陪伴 <span class="xl n1"><%=FAV_WEAPON_HOURS || 0%></span> 小时</p>
+				<% if ((FAV_WEAPON_HOURS || 0)>=50) { %><span class="tag">时长霸主</span><% } %> <% if ((FAV_WEAPON_KILLS || 0)>=2000) { %><span class="tag">人间凶器</span><% } %> <% if
+				((FAV_WEAPON_NAME || "")=='Pistol' && (FAV_WEAPON_KILLS || 0)>=500) { %><span class="tag tag--p">手枪 500 杀</span><% } %>
+			</div>
+			<div class="card">
+				<p class="l">载具恋人 · <span class="xxl n2"><%=FAV_VEHICLE_NAME || "暂无数据"%></span></p>
+				<p class="m">游玩 <span class="xl n1"><%=FAV_VEHICLE_HOURS || 0%></span> 小时， 碾过 <span class="xl n2"><%=FAV_VEHICLE_KILLS || 0%></span> 个“我不下车”</p>
+				<% if ((FAV_VEHICLE_HOURS || 0)>=30) { %><span class="tag">钢铁巨兽</span><% } %> <% if ((FAV_VEHICLE_KILLS || 0)>=1000) { %><span class="tag tag--p">载具无双</span><% } %>
+			</div>
+
+			<!-- 道具搭档 FAV_GADGET_NAME FAV_GADGET_HOURS FAV_GADGET_KILLS -->
+			<div class="card">
+				<p class="l">道具搭档 · <span class="xxl n1"><%=FAV_GADGET_NAME || "暂无数据"%></span></p>
+				<p class="m">使用 <span class="xl n2"><%=FAV_GADGET_HOURS || 0%></span> 小时， 击杀 <span class="xl n1"><%=FAV_GADGET_KILLS || 0%></span></p>
+				<% if ((FAV_GADGET_NAME || "")=='Medkit' && (FAV_GADGET_KILLS || 0)>=500) { %><span class="tag tag--p">医疗包 500 助</span><% } %>
+			</div>
+		</div>
+
+		<!-- 年度战绩 -->
+		<div class="block">
+			<h2>年度战绩</h2>
+			<div class="card">
+				<p class="l">总击杀 <span class="xxl n1"><%=TOTAL_KILLS || 0%></span> | 爆头 <span class="xxl n2"><%=HEADSHOTS || 0%></span></p>
+				<p class="m">助攻 <span class="xl n1"><%=ASSIST_KILLS || 0%></span> | 救人 <span class="xl n2"><%=REVIVES || 0%></span> | 治疗 <span class="xl n1"><%=HEALS || 0%></span></p>
+				<p class="s">胜率 <span class="l n1"><%=WIN_RATE || 0%></span>% （<%=WINS || 0%> 胜 / <%=LOSES || 0%> 负） | KD <span class="l n2"><%=KD_RATIO || 0%></span></p>
+				<% if ((TOTAL_KILLS || 0)>=5000) { %><span class="tag">稳定输出</span><% } %> <% if ((ASSIST_KILLS || 0)>=1500) { %><span class="tag">团队脊梁</span><% } %> <% if ((WIN_RATE || 0)>=80
+				&& (WINS || 0)>=100) { %><span class="tag tag--p">胜率怪兽</span><% } %> <% if ((TOTAL_KILLS || 0)>=500 && (HEADSHOTS || 0)*1.0/(TOTAL_KILLS || 1)>=0.30) { %><span class="tag tag--p"
+					>爆头率 30%</span
+				><% } %>
+			</div>
+		</div>
+
+		<!-- 暖服光环 -->
+		<div class="block">
+			<h2>暖服光环</h2>
+			<div class="card">
+				<p class="l">暖服 <span class="xxl n1"><%=WARM_TIMES || 0%></span> 次</p>
+				<!-- 根据暖服次数显示不同的文本 -->
+				<% if ((WARM_TIMES || 0) >= 50) { %>
+				<p class="m">你是服务器的小太阳，温暖了无数个寒冷的夜晚，比心</p>
+				<% } else if ((WARM_TIMES || 0) >= 10) { %>
+				<p class="m">你是服务器的守护者，默默为大家提供温暖，感谢有你</p>
+				<% } else if ((WARM_TIMES || 0) > 0) { %>
+				<p class="m">你虽然暖服次数不多，但每一次都是对服务器的热爱，继续加油</p>
+				<% } else { %>
+				<p class="m">你还没有暖服记录，下次记得来暖服哦</p>
+				<% } %> <% if ((WARM_TIMES || 0)>=50) { %><span class="tag tag--p">小太阳</span><% } %> <% if ((WARM_TIMES || 0)>=30) { %><span class="tag tag--p">续命天使</span><% } %> <% if
+				((WARM_TIMES || 0)>=10) { %><span class="tag">发光中</span><% } %>
+			</div>
+		</div>
+
+		<!-- 社交黑历史 -->
+		<div class="block">
+			<h2>社交黑历史</h2>
+			<div class="card">
+				<p class="l">被踢 <span class="xxl n2"><%=KICKED_TIMES || 0%></span> 次 | 被拉黑 <span class="xxl n1"><%=BANNED_TIMES || 0%></span> 次</p>
+				<!-- 根据社交黑历史显示不同的文本 -->
+				<% const totalPenalties = (KICKED_TIMES || 0) + (BANNED_TIMES || 0); %> <% if (totalPenalties === 0) { %>
+				<p class="m">你是服务器的模范玩家，没有任何处罚记录，继续保持</p>
+				<% } else if (totalPenalties < 3) { %>
+				<p class="m">人非圣贤孰能无过，偶尔的小失误没关系，继续加油</p>
+				<% } else if (totalPenalties < 10) { %>
+				<p class="m">你在服务器有点活跃过度了，下次注意收敛一下哦</p>
+				<% } else { %>
+				<p class="m">你的处罚记录有点多啊，是不是和服务器八字不合？</p>
+				<% } %> <% if ((KICKED_TIMES || 0)>=3) { %><span class="tag">铁头娃</span><% } %> <% if ((BANNED_TIMES || 0)>=1) { %><span class="tag">倔强青铜</span><% } %>
+			</div>
+		</div>
+
+		<!-- 结尾 -->
+		<div class="block" style="text-align: center">
+			<p class="xl"><%=YEAR+1%> 继续一起开黑</p>
+			<p class="m">—— 来自 <%=GROUP%> 的回忆杀</p>
+		</div>
+	</body>
+</html>

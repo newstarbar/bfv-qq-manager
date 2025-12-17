@@ -268,3 +268,13 @@ export async function isGroupMember(group_id: number, name: string): Promise<boo
 	await db.close();
 	return result.length > 0;
 }
+
+/** 根据qq user_id 获取群友名称 */
+export async function getGroupMemberName(group_id: number, user_id: number): Promise<string | null> {
+	const db = new SQLiteDB(url, createTableSql);
+	await db.open();
+	const sql = `SELECT player_name FROM groupMember WHERE group_id = ? AND user_id = ?`;
+	const result = await db.query(sql, [group_id, user_id]);
+	await db.close();
+	return result.length > 0 ? result[0].player_name : null;
+}

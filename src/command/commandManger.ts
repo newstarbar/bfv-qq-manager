@@ -50,6 +50,7 @@ import { SuperCommand } from "./admin2/superCommand";
 import { AllCommunityServer } from "./normal/allCommunityServer";
 import { CXPlayerSayCommand } from "./normal/cxPlayerSay";
 import { CXPlatoonCommand } from "./normal/cxPlatoon";
+import { AnnualSummaryCommand } from "./normal/annualSummary";
 
 let commandManagers: CommandManager | null = null;
 let privateCommandManagers: PrivateCommandManager | null = null;
@@ -220,6 +221,7 @@ class CommandManager {
 		this.commands.push(new AllCommunityServer());
 		this.commands.push(new CXPlayerSayCommand());
 		this.commands.push(new CXPlatoonCommand());
+		this.commands.push(new AnnualSummaryCommand());
 
 		// admin1 commands
 		this.commands.push(new AdminSayCommand());

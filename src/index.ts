@@ -84,7 +84,9 @@ ws.on("message", async (data) => {
 					// 处理戳一戳
 					if (aiManagers[e.group_id]) {
 						const res = await aiManagers[e.group_id].aiSay(`今天是${today}，${e.nickname}戳了你一下，想要你讲一个战地冷笑话，不要讲废话，直接说笑话，字数50字以内`);
-						sendMsgToQQGroupWithAI(e.group_id, res);
+						if (res) {
+							sendMsgToQQGroupWithAI(e.group_id, res);
+						}
 					}
 				}
 				break;

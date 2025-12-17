@@ -65,7 +65,7 @@ export function initEeAxiosManager() {
 					logger.error(`请求EA失败: ${task.method}, ${task.params}, ${err}`);
 					task.reject(err);
 				} else {
-					const errMsg = error.data.error;
+					const errMsg = error.data.error.message;
 					logger.error(`请求EA失败: ${task.method}, ${task.params}, ${errMsg}`);
 					task.reject(errMsg);
 					if (errMsg === "Invalid Params: no valid session") {

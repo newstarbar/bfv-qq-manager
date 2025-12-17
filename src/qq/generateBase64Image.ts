@@ -1,9 +1,10 @@
 import puppeteer from "puppeteer";
 import fs from "fs";
 import path from "path";
-import logger from "../utils/logger";
 import { AllWeaponDate, PlayerLoadout } from "../interface/player";
+import { getServerAnnualData, getPlayerAnnualData, getPlayerOnlineHistory } from "../robot/cx/annualSummary";
 import ejs from "ejs";
+import logger from "../utils/logger";
 
 export async function htmlToBase64Image(htmlContent: string): Promise<string> {
 	let chromePath = path.join(process.cwd(), "chrome/win/chrome.exe");
@@ -22,6 +23,61 @@ export async function htmlToBase64Image(htmlContent: string): Promise<string> {
 	await page.setContent(htmlContent);
 	const base64Image = await page.screenshot({ encoding: "base64", fullPage: true });
 	await browser.close();
+	return base64Image;
+}
+
+/** 生成玩家年度总结图片 */
+export async function generatePlayerAnnualSummaryImage(playerName: string, group: string): Promise<string> {
+	logger.debug(`开始生成玩家${playerName}年度总结图片`);
+	const htmlFilePath = path.join(process.cwd(), `html/playerAnnualSummary.html`);
+	// 读取html模板
+	const htmlContent = await fs.promises.readFile(htmlFilePath, "utf-8");
+	logger.debug(`html模板读取完成`);
+
+	const playerData = await getPlayerAnnualData(playerName, new Date().getFullYear());
+	// 获取玩家在线历史数据
+	const playerOnlineHistory = await getPlayerOnlineHistory(playerName, new Date().getFullYear());
+
+	logger.debug(`sqlite数据获取完成`);
+
+	const variables = {
+		PLAYER_NAME: playerName,
+		YEAR: new Date().getFullYear(),
+		GROUP: group,
+		...playerData,
+		...playerOnlineHistory
+	};
+
+	// 使用 ejs 渲染模板
+	const renderedHtml = ejs.render(htmlContent, variables);
+
+	const base64Image = await htmlToBase64Image(renderedHtml);
+	logger.debug(`Base64图片生成完成`);
+	return base64Image;
+}
+
+/** 生成服务器年度总结图片 */
+export async function generateServerAnnualSummaryImage(group: string): Promise<string> {
+	logger.debug(`开始生成服务器${group}年度总结图片`);
+	const htmlFilePath = path.join(process.cwd(), `html/serverAnnualSummary.html`);
+	// 读取html模板
+	const htmlContent = await fs.promises.readFile(htmlFilePath, "utf-8");
+	logger.debug(`html模板读取完成`);
+
+	const serverData = await getServerAnnualData(group, new Date().getFullYear());
+	logger.debug(`sqlite数据获取完成`);
+
+	const variables = {
+		YEAR: new Date().getFullYear(),
+		GROUP: group,
+		...serverData
+	};
+
+	// 使用 ejs 渲染模板
+	const renderedHtml = ejs.render(htmlContent, variables);
+
+	const base64Image = await htmlToBase64Image(renderedHtml);
+	logger.debug(`Base64图片生成完成`);
 	return base64Image;
 }
 

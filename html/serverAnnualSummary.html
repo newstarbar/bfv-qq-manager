@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="UTF-8" />
+		<title>我们群组<%=GROUP%> · <%=YEAR%> 年鉴</title>
+		<meta name="viewport" content="width=1080,user-scalable=no" />
+		<style>
+			:root {
+				--n1: #629ce2;
+				--n2: #e4e4e4;
+				--bg: #0a0a1a;
+			}
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+				font-family: "Exo 2", "PingFang SC", sans-serif;
+				color: #fff;
+			}
+			body {
+				width: 1080px;
+				margin: 0 auto;
+				background: var(--bg);
+			}
+			/* 背景图片容器 */
+			.bg-image {
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				z-index: -1;
+				background-size: cover;
+				background-position: center;
+				opacity: 0.3;
+			}
+			/* 使用CSS变量存储背景图片URL，减少重复请求 */
+			:root {
+				--bg-img-1: url("https://pic1.imgdb.cn/item/6942aaa8cf0d90563b3bf3cd.png");
+				--bg-img-2: url("hhttps://pic1.imgdb.cn/item/6942aaa8cf0d90563b3bf3cf.png");
+				--bg-img-3: url("https://pic1.imgdb.cn/item/6942aaa8cf0d90563b3bf3d0.png");
+			}
+
+			/* 不同区块的背景图片 */
+			.block:nth-child(1),
+			.block:nth-child(4),
+			.block:nth-child(7) {
+				background: rgba(0, 0, 0, 0.7) var(--bg-img-1) no-repeat center/cover;
+				background-blend-mode: overlay;
+			}
+
+			.block:nth-child(2),
+			.block:nth-child(5),
+			.block:nth-child(8) {
+				background: rgba(0, 0, 0, 0.7) var(--bg-img-2) no-repeat center/cover;
+				background-blend-mode: overlay;
+			}
+
+			.block:nth-child(3),
+			.block:nth-child(6),
+			.block:nth-child(9) {
+				background: rgba(0, 0, 0, 0.7) var(--bg-img-3) no-repeat center/cover;
+				background-blend-mode: overlay;
+			}
+			.block {
+				width: 100%;
+				padding: 45px 70px 25px;
+			}
+			h1 {
+				font-size: 80px;
+				font-weight: 900;
+				background: linear-gradient(135deg, var(--n1), var(--n2));
+				-webkit-background-clip: text;
+				-webkit-text-fill-color: transparent;
+				line-height: 2.5;
+			}
+			h2 {
+				font-size: 42px;
+				margin: 0 0 12px;
+				font-weight: 700;
+			}
+			p {
+				font-size: 30px;
+				line-height: 1.5;
+				margin: 3px 0;
+			}
+			.xxl {
+				font-size: 68px;
+			}
+			.xl {
+				font-size: 54px;
+			}
+			.l {
+				font-size: 40px;
+			}
+			.m {
+				font-size: 32px;
+			}
+			.s {
+				font-size: 24px;
+			}
+			.xs {
+				font-size: 20px;
+			}
+			.n1 {
+				color: var(--n1);
+				font-weight: 800;
+			}
+			.n2 {
+				color: var(--n2);
+				font-weight: 800;
+			}
+			.note {
+				font-size: 20px;
+				color: #aaa;
+			}
+			.card {
+				background: rgba(255, 255, 255, 0.07);
+				border: 1px solid rgba(255, 255, 255, 0.15);
+				border-radius: 16px;
+				padding: 25px;
+				margin: 18px 0;
+			}
+			.tag {
+				display: inline-block;
+				background: rgba(255, 255, 255, 0.1);
+				border: 1px solid var(--n1);
+				padding: 8px 18px;
+				border-radius: 18px;
+				font-size: 20px;
+				margin: 4px 4px 0 0;
+			}
+			.tag--b {
+				border-color: var(--n2);
+				color: var(--n2);
+			}
+		</style>
+	</head>
+	<body>
+		<div class="block">
+			<h1>我们群组<%=GROUP%></h1>
+			<p class="xl"><%=YEAR%> 年鉴</p>
+			<p class="note">—— 借助官方服务器，一起把日子炸成烟花</p>
+		</div>
+
+		<!-- 年度数据总览 -->
+		<div class="block">
+			<h2>年度数据总览</h2>
+			<div class="card">
+				<p class="m">陪大家打卡 <span class="xxl n1"><%=TOTAL_DAYS_ONLINE || 0%></span> 天</p>
+				<p class="s">累计 <span class="xl n2"><%=TOTAL_HOURS || 0%></span> 小时，经历了 <span class="xl n1"><%=TOTAL_ROUNDS || 0%></span> 次战地人生</p>
+				<% if ((TOTAL_DAYS_ONLINE || 0)>=300) { %><span class="tag tag--b">超长待机</span><% } %> <% if ((TOTAL_HOURS || 0)>=2000) { %><span class="tag tag--b">肝服</span><% } %>
+				<span class="tag">热血</span><span class="tag">不炸不服</span>
+			</div>
+		</div>
+
+		<!-- 暖服光环 -->
+		<div class="block">
+			<h2>暖服光环</h2>
+			<div class="card">
+				<p class="m">全年 <span class="xxl n2"><%=WARM_TOTAL_TIMES || 0%></span> 次暖服</p>
+				<p class="s">最暖：<span class="xl n1"><%=WARM_TOP_PLAYER || "暂无数据"%></span>（<%=WARM_TOP_TIMES || 0%> 次）</p>
+				<% if ((WARM_TOTAL_TIMES || 0)>=100) { %><span class="tag tag--b">续命天使团</span><% } %> <% if ((WARM_TOP_TIMES || 0)>=50) { %><span class="tag tag--b">小太阳</span><% } %>
+				<span class="tag">发光中</span><span class="tag">暖服天团</span>
+			</div>
+		</div>
+
+		<!-- 封神榜 -->
+		<div class="block">
+			<h2>封神榜</h2>
+			<div class="card">
+				<p class="m">封神日 · <span class="xl n1"><%=PEAK_DATE || "暂无数据"%></span></p>
+				<p class="s">同时在线 <span class="xxl n2"><%=PEAK_PLAYERS || 0%></span> 人</p>
+				<% if ((PEAK_PLAYERS || 0)>=80) { %><span class="tag tag--b">神仙打架</span><% } %> <% if ((PEAK_PLAYERS || 0)>=60) { %><span class="tag">人山人海</span><% } %>
+			</div>
+		</div>
+
+		<!-- 小黑屋档案 -->
+		<div class="block">
+			<h2>小黑屋档案</h2>
+			<div class="card">
+				<p class="m">踢掉 <span class="xxl n1"><%=TOTAL_KICKS || 0%></span> 位“时神时鬼”</p>
+				<p class="s">
+					封禁 <span class="xl n2"><%=TOTAL_BANS || 0%></span> 位， <br />
+					原因 TOP1：<span class="xl n1"><%=TOP_BAN_REASON_1 || "未知原因"%></span>（<%=TOP_BAN_REASON_1_COUNT || 0%> 次）
+					<br />
+					原因 TOP2：<span class="l n1"><%=TOP_BAN_REASON_2 || "未知原因"%></span> （<%=TOP_BAN_REASON_2_COUNT || 0%> 次）
+					<br />
+					原因 TOP3：<span class="l n1"><%=TOP_BAN_REASON_3 || "未知原因"%></span> （<%=TOP_BAN_REASON_3_COUNT || 0%> 次）
+				</p>
+				<!-- 黑名单玩家：分临时黑名单、永久黑名单 -->
+				<p class="m">黑名单玩家：</p>
+				<p class="s">
+					临时黑名单：<span class="xl n1"><%=TEMP_BLACKLIST_COUNT || 0%></span> 人<br />
+					永久黑名单：<span class="xl n2"><%=PERM_BLACKLIST_COUNT || 0%></span> 人
+				</p>
+				<% if ((TOTAL_BANS || 0)>=20) { %><span class="tag tag--b">秩序铁腕</span><% } %> <span class="tag">正义执行</span><span class="tag">秩序至上</span>
+			</div>
+		</div>
+
+		<!-- 纪律检查组 -->
+		<div class="block">
+			<h2>纪律检查组</h2>
+			<div class="card">
+				<!-- 机器检察官：名称，处理数量 -->
+				<p class="m">机器检察官：<span class="xxl n2"><%=BOT_DISciplinary_NAME || "暂无数据"%></span></p>
+				<p class="s">处理案件 <span class="xl n1"><%=BOT_DISciplinary_COUNT || 0%></span> 次</p>
+				<br />
+				<!-- 前top3 处理案件最多的检察官: 名称，处理数量 -->
+				<p class="m">前top3 处理案件最多的检察官：</p>
+				<p class="s">
+					TOP1：<span class="xl n1"><%=TOP_DISciplinary_NAME_1 || "暂无数据"%></span>（<%=TOP_DISciplinary_COUNT_1 || 0%> 次）<br />
+					TOP2：<span class="xl n1"><%=TOP_DISciplinary_NAME_2 || "暂无数据"%></span>（<%=TOP_DISciplinary_COUNT_2 || 0%> 次）<br />
+					TOP3：<span class="xl n1"><%=TOP_DISciplinary_NAME_3 || "暂无数据"%></span>（<%=TOP_DISciplinary_COUNT_3 || 0%> 次）
+				</p>
+			</div>
+		</div>
+
+		<!-- 武器 & 载具星云 -->
+		<div class="block">
+			<h2>武器 & 载具星云</h2>
+			<div class="card">
+				<p class="m">最卷武器 · <span class="xxl n2"><%=TOP_WEAPON_NAME || "暂无数据"%></span></p>
+				<p class="s">击杀 <span class="xl n1"><%=TOP_WEAPON_KILLS || 0%></span> 人， 游玩 <span class="xl n2"><%=TOP_WEAPON_HOURS || 0%></span> 小时</p>
+				<% if ((TOP_WEAPON_KILLS || 0)>=2000) { %><span class="tag">人间凶器</span><% } %> <% if ((TOP_WEAPON_HOURS || 0)>=50) { %><span class="tag tag--b">时长霸主</span><% } %>
+			</div>
+			<div class="card">
+				<p class="m">载具劳模 · <span class="xxl n1"><%=TOP_VEHICLE_NAME || "暂无数据"%></span></p>
+				<p class="s">游玩 <span class="xl n2"><%=TOP_VEHICLE_HOURS || 0%></span> 小时， 拿下 <span class="xl n1"><%=TOP_VEHICLE_KILLS || 0%></span> 次碾压</p>
+				<% if ((TOP_VEHICLE_HOURS || 0)>=30) { %><span class="tag">钢铁巨兽</span><% } %> <% if ((TOP_VEHICLE_KILLS || 0)>=1000) { %><span class="tag tag--b">载具无双</span><% } %>
+			</div>
+		</div>
+
+		<!-- 致敬传奇aa人-->
+		<div class="block">
+			<h2>致敬传奇aa人</h2>
+			<div class="card">
+				<p class="s">击毁 <span class="xl n1"><%=SUM_AA_KILLS || 0%></span> 架飞机， 游玩 <span class="xl n2"><%=SUM_AA_HOURS || 0%></span> 小时</p>
+				<% if ((SUM_AA_KILLS || 0)>=1000) { %><span class="tag tag--b">传奇aa人</span><% } %> <% if ((SUM_AA_HOURS || 0)>=50) { %><span class="tag">时长霸主</span><% } %>
+			</div>
+		</div>
+
+		<!-- 结尾 -->
+		<div class="block" style="text-align: center">
+			<p class="xl"><%=YEAR+1%> 继续一起开黑</p>
+			<p class="m">—— 我们群组<%=GROUP%>，敬每一位来过的人</p>
+		</div>
+	</body>
+</html>
